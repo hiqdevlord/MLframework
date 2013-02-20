@@ -55,7 +55,7 @@ class Classification(object):
             Cs = np.logspace(-4, 4, 3)
             estimator = GridSearchCV(pipe,
                                      dict(logistic__C=Cs))
-        return estimator
+        return [estimator, "logistic regression"]
     
     def __gen_svc_estimator(self):
         svc = SVC()
@@ -63,15 +63,25 @@ class Classification(object):
             pca = decomposition.PCA()
             pipe = Pipeline(steps=[('pca', pca), ('svc', svc)])
             n_components = [20, 40, 64]
+            
+            kernels = ['linear', 'poly', 'rbf', 'sigmoid']
             Cs = np.logspace(-4, 4, 3)
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
-                                     logistic__C=Cs))
-    
+                                     svc__C=Cs,svc__kernel=kernels))
+        else:
+            pipe = Pipeline(steps=[('svc', svc)])
+            
+            kernels = ['linear', 'poly', 'rbf', 'sigmoid']
+            Cs = np.logspace(-4, 4, 3)
+            estimator = GridSearchCV(pipe,
+                                     dict(svc__C=Cs, svc__kernel=kernels))
+        return [estimator, "support vector classifier"]
+
     def run(self):
-        self.estimators[0].fit(self.inputs_train_val,self.targets_train_val)
-        print "Num components chosen = {}\nVal for C chosen = {}".format(self.estimators[0].best_estimator_.named_steps['pca'].n_components,
-                                                                         self.estimators[0].best_estimator_.named_steps['logistic'].C)
+        self.estimators[0][0].fit(self.inputs_train_val,self.targets_train_val)
+        print "Num components chosen = {}\nVal for C chosen = {}".format(self.estimators[0][0].best_estimator_.named_steps['pca'].n_components,
+                                                                         self.estimators[0][0].best_estimator_.named_steps['logistic'].C)
 #        for e in self.estimators:
 #            e.fit()
         # for all estimators check on test set
