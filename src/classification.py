@@ -166,7 +166,7 @@ class Classification(object):
         return [estimator, description]
     
     def __gen_rnn_estimator(self,verbose):
-        rnn = RadiusNeighborsClassifier()
+        rnn = RadiusNeighborsClassifier(outlier_label=-1)
         if self.pca:
             description = "RNNClassifier with PCA"
             if verbose: print "generating {}...".format(description)

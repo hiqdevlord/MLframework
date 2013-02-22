@@ -15,7 +15,7 @@ if __name__ == '__main__':
     
     input_digits = digits.data
     target_digits = digits.target
-    input_train, input_test = np.array_split(input_digits[:-1],2)
+    input_train, input_test = np.array_split(input_digits[:-1],2) 
     target_train, target_test = np.array_split(target_digits[:-1],2)
     
     
