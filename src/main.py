@@ -19,7 +19,16 @@ if __name__ == '__main__':
     target_train, target_test = np.array_split(target_digits[:-1],2)
     
     
-    class_test = Classification(input_digits, target_digits,
-                 input_test, target_test,pca=True,logit=True)
+    class_test = Classification(True, input_train, target_train, 
+                                      input_test, target_test,
+                                      pca = True,
+                                      logit = True,
+                                      SVC = True,
+                                      NuSVC = True,
+                                      SGDC=True,
+                                      KNNC=True,
+                                      RNNC=True)
     
-    class_test.run()
+    class_test.fit_models(True)
+    class_test.test_models()
+    class_test.write_data()
