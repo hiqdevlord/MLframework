@@ -17,8 +17,7 @@ if __name__ == '__main__':
     target_digits = digits.target
     input_train, input_test = np.array_split(input_digits[:-1],2) 
     target_train, target_test = np.array_split(target_digits[:-1],2)
-    
-    
+
     class_test = Classification(True, input_train, target_train, 
                                       input_test, target_test,
                                       PCA = True,
@@ -30,8 +29,14 @@ if __name__ == '__main__':
                                       RNNC = True,
                                       GaussNB = True,
                                       MultiNB = False, 
-                                      BernNB = True)
+                                      BernNB = True,
+                                      DTC = True,
+                                      RFC = True,
+                                      ETC = True,
+                                      GBC = True,
+                                      LDA = True,
+                                      QDA = False)
     
     class_test.fit_models(True)
     class_test.test_models()
-    class_test.write_data()
+    class_test.write_data(True)

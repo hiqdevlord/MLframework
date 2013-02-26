@@ -4,7 +4,8 @@ Created on Feb 20, 2013
 @author: Ash Booth
 
 TODO:
-- allow ability to check parameterisation of the best models (results)
+- write data files for performances and paramterisations
+- add preprocessing functionality
 '''
 
 import numpy as np
@@ -18,6 +19,9 @@ from sklearn.svm import SVC, NuSVC
 from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
+from sklearn.lda import LDA
+from sklearn.qda import QDA
 
 class Classification(object):
     '''
@@ -33,7 +37,9 @@ class Classification(object):
                  SVC = False, NuSVC = False, 
                  KNNC = False, RNNC = False,
                  GaussNB = False, MultiNB = False, BernNB = False,
-                 DTClassifier = False):
+                 DTC = False,
+                 RFC = False, ETC = False, GBC = False,
+                 LDA = False, QDA = False):
         '''
         Constructor
         '''
@@ -54,7 +60,12 @@ class Classification(object):
         if GaussNB: self.estimators.append(self.__gen_gnb_estimator(verbose))
         if MultiNB: self.estimators.append(self.__gen_mnb_estimator(verbose))
         if BernNB: self.estimators.append(self.__gen_bnb_estimator(verbose))
-        if DTClassifier: self.estimators.append(self.__gen_DTC_estimator(verbose))
+        if DTC: self.estimators.append(self.__gen_dtc_estimator(verbose))
+        if RFC: self.estimators.append(self.__gen_rfc_estimator(verbose))
+        if ETC: self.estimators.append(self.__gen_etc_estimator(verbose))
+        if GBC: self.estimators.append(self.__gen_gbc_estimator(verbose))
+        if LDA: self.estimators.append(self.__gen_lda_estimator(verbose))
+        if QDA: self.estimators.append(self.__gen_qda_estimator(verbose))
         
         self.outdata = []
         
@@ -251,56 +262,167 @@ class Classification(object):
         return [estimator, description]
     
     def __gen_dtc_estimator(self,verbose):
-        dtc = DecisionTreeClassifier()
+        dtc = DecisionTreeClassifier(random_state=0)
         if self.PCA:
             description = "DTClassifier with PCA"
             if verbose: print "generating {}...".format(description)
             pca = decomposition.PCA()
             pipe = Pipeline(steps=[('pca', pca), ('dtc', dtc)])
             n_components = [20, 40, 64]
+            criteria = ['entropy', 'gini']
+            max_depth = ['None', 3, 5, 7]
             estimator = GridSearchCV(pipe,
-                                     dict(pca__n_components=n_components))
+                                     dict(pca__n_components=n_components,
+                                          dtc__criterion=criteria, dtc__max_depth=max_depth))
         else:
             description = "DTClassifier"
             if verbose: print "generating {}...".format(description)
             pipe = Pipeline(steps=[('dtc', dtc)])
-            
+            criteria = ['entropy', 'gini']
+            max_depth = ['None', 3, 5, 7]
+            estimator = GridSearchCV(pipe,
+                                     dict(dtc__criterion=criteria, dtc__max_depth=max_depth))
+        return [estimator, description]
+    
+    def __gen_rfc_estimator(self,verbose):
+        rfc = RandomForestClassifier(n_jobs=-1)
+        if self.PCA:
+            description = "RFClassifier with PCA"
+            if verbose: print "generating {}...".format(description)
+            pca = decomposition.PCA()
+            pipe = Pipeline(steps=[('pca', pca), ('rfc', rfc)])
+            n_components = [20, 40, 64]
+            n_estimators = [5, 10, 15]
+            criteria = ['entropy', 'gini']
+            max_depth = ['None', 3, 5, 7]
+            estimator = GridSearchCV(pipe,
+                                     dict(pca__n_components=n_components,
+                                          rfc__criterion=criteria, rfc__max_depth=max_depth,
+                                          rfc__n_estimators=n_estimators))
+        else:
+            description = "RFClassifier"
+            if verbose: print "generating {}...".format(description)
+            pipe = Pipeline(steps=[('rfc', rfc)])
+            n_estimators = [5, 10, 15]
+            criteria = ['entropy', 'gini']
+            max_depth = ['None', 3, 5, 7]
+            estimator = GridSearchCV(pipe,
+                                     dict(rfc__criterion=criteria, rfc__max_depth=max_depth,
+                                          rfc__n_estimators=n_estimators))
+        return [estimator, description]
+    
+    def __gen_etc_estimator(self,verbose):
+        etc = ExtraTreesClassifier(n_jobs=-1)
+        if self.PCA:
+            description = "ETClassifier with PCA"
+            if verbose: print "generating {}...".format(description)
+            pca = decomposition.PCA()
+            pipe = Pipeline(steps=[('pca', pca), ('etc', etc)])
+            n_components = [20, 40, 64]
+            n_estimators = [5, 10, 15]
+            criteria = ['entropy', 'gini']
+            max_depth = ['None', 3, 5, 7]
+            estimator = GridSearchCV(pipe,
+                                     dict(pca__n_components=n_components,
+                                          etc__criterion=criteria, etc__max_depth=max_depth,
+                                          etc__n_estimators=n_estimators))
+        else:
+            description = "ETClassifier"
+            if verbose: print "generating {}...".format(description)
+            pipe = Pipeline(steps=[('etc', etc)])
+            n_estimators = [5, 10, 15]
+            criteria = ['entropy', 'gini']
+            max_depth = ['None', 3, 5, 7]
+            estimator = GridSearchCV(pipe,
+                                     dict(etc__criterion=criteria, etc__max_depth=max_depth,
+                                          etc__n_estimators=n_estimators))
+        return [estimator, description]
+    
+    def __gen_gbc_estimator(self,verbose):
+        gbc = GradientBoostingClassifier()
+        if self.PCA:
+            description = "GBClassifier with PCA"
+            if verbose: print "generating {}...".format(description)
+            pca = decomposition.PCA()
+            pipe = Pipeline(steps=[('pca', pca), ('gbc', gbc)])
+            n_components = [20, 40, 64]
+            max_depth = ['None', 3, 5, 7]
+            estimator = GridSearchCV(pipe,
+                                     dict(pca__n_components=n_components,
+                                          gbc__max_depth=max_depth))
+        else:
+            description = "GBClassifier"
+            if verbose: print "generating {}...".format(description)
+            pipe = Pipeline(steps=[('gbc', gbc)])
+            max_depth = ['None', 3, 5, 7]
+            estimator = GridSearchCV(pipe,
+                                     dict(gbc__max_depth=max_depth))
+        return [estimator, description]
+    
+    def __gen_lda_estimator(self,verbose):
+        lda = LDA()
+        if self.PCA:
+            description = "LDAClassifier with PCA"
+            if verbose: print "generating {}...".format(description)
+            pca = decomposition.PCA()
+            pipe = Pipeline(steps=[('pca', pca), ('lda', lda)])
+            n_components = [20, 40, 64]
+            estimator = GridSearchCV(pipe,
+                                     dict(pca__n_components=n_components))
+        else:
+            description = "LDAClassifier"
+            if verbose: print "generating {}...".format(description)
+            pipe = Pipeline(steps=[('lda', lda)])
             estimator = GridSearchCV(pipe)
         return [estimator, description]
     
+    def __gen_qda_estimator(self,verbose):
+        qda = QDA()
+        if self.PCA:
+            description = "QDAClassifier with PCA"
+            if verbose: print "generating {}...".format(description)
+            pca = decomposition.PCA()
+            pipe = Pipeline(steps=[('pca', pca), ('qda', qda)])
+            n_components = [20, 40, 64]
+            estimator = GridSearchCV(pipe,
+                                     dict(pca__n_components=n_components))
+        else:
+            description = "LDAClassifier"
+            if verbose: print "generating {}...".format(description)
+            pipe = Pipeline(steps=[('qda', qda)])
+            estimator = GridSearchCV(pipe)
+        return [estimator, description]
 
     def fit_models(self, verbose):
+        print "\nfitting models..."
         for e in self.estimators:
             if verbose: print "fitting {}...".format(e[1])
             e[0].fit(self.inputs_train_val,self.targets_train_val)
         
         
     def test_models(self):
+        print "\ntesting models..."
         for e in self.estimators:
             cv_score = e[0].score(self.inputs_train_val, self.targets_train_val)
             test_score = e[0].score(self.inputs_test, self.targets_test)
             self.outdata.append([e[1],cv_score,test_score])
     
-    def write_data(self):
-        print "\n"
-        for d in self.outdata: print d
-#        print (self.estimators[0][0].best_estimator_)   
-#        print "\nPCA with logistic regression:"
-#        print "Num components chosen = {}\nVal for C chosen = {}".format(self.estimators[0][0].best_estimator_.named_steps['pca'].n_components,
-#                                                                         self.estimators[0][0].best_estimator_.named_steps['logistic'].C)
-#        print "\nPCA with Support Vector Classifier:"
-#        print "Num components chosen = {}\nVal for C chosen = {}\nkernel = {}".format(self.estimators[1][0].best_estimator_.named_steps['pca'].n_components,
-#                                                                 self.estimators[1][0].best_estimator_.named_steps['svc'].C,
-#                                                                 self.estimators[1][0].best_estimator_.named_steps['svc'].kernel)
-#        print "\nPCA with nu Support Vector Classifier:"
-#        print "Num components chosen = {}\nVal for nu chosen = {}\nkernel = {}".format(self.estimators[2][0].best_estimator_.named_steps['pca'].n_components,
-#                                                                 self.estimators[2][0].best_estimator_.named_steps['nusvc'].nu,
-#                                                                 self.estimators[2][0].best_estimator_.named_steps['nusvc'].kernel)
-#        pass
-#        
-#        for e in self.estimators:
-#            e.fit()
-        # for all estimators check on test set
-        # output results
+    def write_data(self,verbose):
+        if verbose:
+            for d in self.outdata:
+                print d
+        print "\nwriting data..."
+        import csv
+        with open('score.csv', 'wb') as csvfile:
+            scores = csv.writer(csvfile, delimiter=',',
+                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            scores.writerows(self.outdata)
+        
+        param_file = open('params.txt', 'wb')
+        for e in self.estimators:
+            param_file.write(e[1])
+            param_file.write("{}".format(e[0]))
+            param_file.write("\n\n")
+        param_file.close()
         
     
