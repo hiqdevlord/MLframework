@@ -16,6 +16,8 @@ from sklearn import decomposition
 from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.svm import SVC, NuSVC
 from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
+from sklearn.tree import DecisionTreeClassifier
 
 class Classification(object):
     '''
@@ -26,10 +28,12 @@ class Classification(object):
     def __init__(self, verbose,
                  inputs_train_val, targets_train_val,
                  inputs_test, targets_test, 
-                 pca = False,
-                 logit = False, perceptron = False, SGDC = True,
+                 PCA = False,
+                 Logit = False, perceptron = False, SGDC = True,
                  SVC = False, NuSVC = False, 
-                 KNNC = False, RNNC = False):
+                 KNNC = False, RNNC = False,
+                 GaussNB = False, MultiNB = False, BernNB = False,
+                 DTClassifier = False):
         '''
         Constructor
         '''
@@ -37,23 +41,27 @@ class Classification(object):
         self.targets_train_val = targets_train_val
         self.inputs_test = inputs_test
         self.targets_test = targets_test
-        self.pca = pca
+        self.PCA = PCA
         
         self.estimators = []
         
-        if logit: self.estimators.append(self.__gen_logit_estimator(verbose))
+        if Logit: self.estimators.append(self.__gen_logit_estimator(verbose))
         if SVC: self.estimators.append(self.__gen_svc_estimator(verbose))
         if NuSVC: self.estimators.append(self.__gen_nusvc_estimator(verbose))
         if SGDC: self.estimators.append(self.__gen_sgd_estimator(verbose))
         if KNNC: self.estimators.append(self.__gen_knn_estimator(verbose))
         if RNNC: self.estimators.append(self.__gen_rnn_estimator(verbose))
+        if GaussNB: self.estimators.append(self.__gen_gnb_estimator(verbose))
+        if MultiNB: self.estimators.append(self.__gen_mnb_estimator(verbose))
+        if BernNB: self.estimators.append(self.__gen_bnb_estimator(verbose))
+        if DTClassifier: self.estimators.append(self.__gen_DTC_estimator(verbose))
         
         self.outdata = []
         
 
     def __gen_logit_estimator(self,verbose):
         logistic = LogisticRegression()
-        if self.pca:
+        if self.PCA:
             description = "logit classifier with PCA"
             if verbose: print "generating logit classifier grid search with PCA..."
             pca = decomposition.PCA()
@@ -74,7 +82,7 @@ class Classification(object):
     
     def __gen_svc_estimator(self,verbose):
         svc = SVC()
-        if self.pca:
+        if self.PCA:
             description = "SVC with PCA"
             if verbose: print "generating support vector classifier grid search with PCA..."
             pca = decomposition.PCA()
@@ -98,7 +106,7 @@ class Classification(object):
     
     def __gen_nusvc_estimator(self,verbose):
         nusvc = NuSVC()
-        if self.pca:
+        if self.PCA:
             description= "NuSVC with PCA"
             if verbose: print "generating nu support vector classifier grid search with PCA..."
             pca = decomposition.PCA()
@@ -121,7 +129,7 @@ class Classification(object):
     
     def __gen_sgd_estimator(self,verbose):
         sgd = SGDClassifier()
-        if self.pca:
+        if self.PCA:
             description = "SGDClassifier with PCA"
             if verbose: print "generating {}...".format(description)
             pca = decomposition.PCA()
@@ -144,13 +152,13 @@ class Classification(object):
     
     def __gen_knn_estimator(self,verbose):
         knn = KNeighborsClassifier()
-        if self.pca:
+        if self.PCA:
             description = "KNNClassifier with PCA"
             if verbose: print "generating {}...".format(description)
             pca = decomposition.PCA()
             pipe = Pipeline(steps=[('pca', pca), ('knn', knn)])
             n_components = [20, 40, 64]
-            n_neighbors = [5]
+            n_neighbors = [3,5,9]
             algorithm = ['ball_tree', 'kd_tree', 'brute']
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
@@ -159,7 +167,7 @@ class Classification(object):
             description = "KNNClassifier"
             if verbose: print "generating {}...".format(description)
             pipe = Pipeline(steps=[('knn', knn)])
-            n_neighbors = [5]
+            n_neighbors = [3,5,9]
             algorithm = ['ball_tree', 'kd_tree', 'brute']
             estimator = GridSearchCV(pipe,
                                      dict(knn__n_neighbors=n_neighbors, knn__algorithm=algorithm))
@@ -167,14 +175,14 @@ class Classification(object):
     
     def __gen_rnn_estimator(self,verbose):
         rnn = RadiusNeighborsClassifier(outlier_label=-1)
-        if self.pca:
+        if self.PCA:
             description = "RNNClassifier with PCA"
             if verbose: print "generating {}...".format(description)
             pca = decomposition.PCA()
             pipe = Pipeline(steps=[('pca', pca), ('rnn', rnn)])
             n_components = [20, 40, 64]
             radius = [1.0]
-            algorithm = ['ball_tree', 'kd_tree', 'brute']
+            algorithm = ['auto'] # ['ball_tree', 'kd_tree', 'brute']
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
                                      rnn__radius=radius, rnn__algorithm=algorithm))
@@ -182,10 +190,82 @@ class Classification(object):
             description = "RNNClassifier"
             if verbose: print "generating {}...".format(description)
             pipe = Pipeline(steps=[('rnn', rnn)])
-            radius = [1.0]
-            algorithm = ['ball_tree', 'kd_tree', 'brute']
+            radius = [1.6]
+            algorithm = ['auto'] #['ball_tree', 'kd_tree', 'brute']
             estimator = GridSearchCV(pipe,
                                      dict(rnn__radius=radius, rnn__algorithm=algorithm))
+        return [estimator, description]
+    
+    def __gen_gnb_estimator(self,verbose):
+        gnb = GaussianNB()
+        if self.PCA:
+            description = "GaussianNB with PCA"
+            if verbose: print "generating {}...".format(description)
+            pca = decomposition.PCA()
+            pipe = Pipeline(steps=[('pca', pca), ('gnb', gnb)])
+            n_components = [20, 40, 64]
+            estimator = GridSearchCV(pipe,
+                                     dict(pca__n_components=n_components))
+        else:
+            description = "GaussianNB"
+            if verbose: print "generating {}...".format(description)
+            pipe = Pipeline(steps=[('gnb', gnb)])
+            
+            estimator = GridSearchCV(pipe)
+        return [estimator, description]
+    
+    def __gen_mnb_estimator(self,verbose):
+        mnb = MultinomialNB(fit_prior=True)
+        if self.PCA:
+            description = "MultinomialNB with PCA"
+            if verbose: print "generating {}...".format(description)
+            pca = decomposition.PCA()
+            pipe = Pipeline(steps=[('pca', pca), ('mnb', mnb)])
+            n_components = [20, 40, 64]
+            estimator = GridSearchCV(pipe,
+                                     dict(pca__n_components=n_components))
+        else:
+            description = "MultinomialNB"
+            if verbose: print "generating {}...".format(description)
+            pipe = Pipeline(steps=[('mnb', mnb)])
+            
+            estimator = GridSearchCV(pipe)
+        return [estimator, description]
+    
+    def __gen_bnb_estimator(self,verbose):
+        bnb = BernoulliNB(fit_prior=True)
+        if self.PCA:
+            description = "BernoulliNB with PCA"
+            if verbose: print "generating {}...".format(description)
+            pca = decomposition.PCA()
+            pipe = Pipeline(steps=[('pca', pca), ('bnb', bnb)])
+            n_components = [20, 40, 64]
+            estimator = GridSearchCV(pipe,
+                                     dict(pca__n_components=n_components))
+        else:
+            description = "BernoulliNB"
+            if verbose: print "generating {}...".format(description)
+            pipe = Pipeline(steps=[('bnb', bnb)])
+            
+            estimator = GridSearchCV(pipe)
+        return [estimator, description]
+    
+    def __gen_dtc_estimator(self,verbose):
+        dtc = DecisionTreeClassifier()
+        if self.PCA:
+            description = "DTClassifier with PCA"
+            if verbose: print "generating {}...".format(description)
+            pca = decomposition.PCA()
+            pipe = Pipeline(steps=[('pca', pca), ('dtc', dtc)])
+            n_components = [20, 40, 64]
+            estimator = GridSearchCV(pipe,
+                                     dict(pca__n_components=n_components))
+        else:
+            description = "DTClassifier"
+            if verbose: print "generating {}...".format(description)
+            pipe = Pipeline(steps=[('dtc', dtc)])
+            
+            estimator = GridSearchCV(pipe)
         return [estimator, description]
     
 
@@ -202,6 +282,7 @@ class Classification(object):
             self.outdata.append([e[1],cv_score,test_score])
     
     def write_data(self):
+        print "\n"
         for d in self.outdata: print d
 #        print (self.estimators[0][0].best_estimator_)   
 #        print "\nPCA with logistic regression:"

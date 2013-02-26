@@ -21,13 +21,16 @@ if __name__ == '__main__':
     
     class_test = Classification(True, input_train, target_train, 
                                       input_test, target_test,
-                                      pca = True,
-                                      logit = True,
+                                      PCA = True,
+                                      Logit = True,
                                       SVC = True,
                                       NuSVC = True,
-                                      SGDC=True,
-                                      KNNC=True,
-                                      RNNC=True)
+                                      SGDC = True,
+                                      KNNC=  True,
+                                      RNNC = True,
+                                      GaussNB = True,
+                                      MultiNB = False, 
+                                      BernNB = True)
     
     class_test.fit_models(True)
     class_test.test_models()
