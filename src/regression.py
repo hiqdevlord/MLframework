@@ -1,11 +1,7 @@
 '''
-Created on Feb 20, 2013
+Created on Feb 27, 2013
 
 @author: Ash Booth
-
-TODO:
-- write data files for performances and paramterisations
-- add preprocessing functionality
 '''
 
 import numpy as np
@@ -23,7 +19,7 @@ from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, Gradi
 from sklearn.lda import LDA
 from sklearn.qda import QDA
 
-class Classification(object):
+class Regression(object):
     '''
     classdocs
     '''
@@ -435,9 +431,5 @@ class Classification(object):
         print '\n'
         print '\n'.join(table)   
             
-            
-            
-            
-            
-            
-            
+
+        
