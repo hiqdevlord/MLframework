@@ -124,7 +124,7 @@ class Classification(object):
             pipe = Pipeline(steps=[('pca', pca), ('nusvc', nusvc)])
             n_components = [20, 40, 64]
             kernels = ['linear', 'poly', 'rbf', 'sigmoid']
-            nu = [0.4, 0.6]
+            nu = [0.1]
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
                                      nusvc__nu=nu,nusvc__kernel=kernels))
@@ -133,7 +133,7 @@ class Classification(object):
             if verbose: print "generating nu support vector classifier grid search..."
             pipe = Pipeline(steps=[('nusvc', nusvc)])            
             kernels = ['linear', 'poly', 'rbf', 'sigmoid']
-            nu = [0.4, 0.6]
+            nu = [0.1]
             estimator = GridSearchCV(pipe, dict(nusvc__nu=nu, nusvc__kernel=kernels))
         return [estimator, description]
     

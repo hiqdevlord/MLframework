@@ -32,7 +32,7 @@ if __name__ == '__main__':
                                       PCA = False,
                                       Logit = True,
                                       SVC = True,
-                                      NuSVC = True,
+                                      NuSVC = False,
                                       SGDC = True,
                                       KNNC=  True,
                                       RNNC = True,
