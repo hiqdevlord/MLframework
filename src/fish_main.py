@@ -1,5 +1,5 @@
 '''
-Created on Feb 18, 2013
+Created on Feb 28, 2013
 
 @author: Ash Booth
 '''
@@ -7,27 +7,29 @@ Created on Feb 18, 2013
 import numpy as np
 from sklearn import datasets
 from classification import Classification
+from traits.tests import test_target
 
 if __name__ == '__main__':
+    full_data = np.genfromtxt("train_data.csv",delimiter=',')
     
-    # get data
-    digits = datasets.load_digits()
-    
-    input_digits = digits.data
-    target_digits = digits.target
-    input_train, input_test = np.array_split(input_digits[:-1],2) 
-    target_train, target_test = np.array_split(target_digits[:-1],2)
+    # Scale Features
+    from sklearn import preprocessing
+    scaler = preprocessing.Scaler().fit(full_data[:,:-1])
+#    full_data[:,:-1] = scaler.transform(full_data[:,:-1])
 
+    # Shuffle data
+    np.random.shuffle(full_data)
     
-#    
-#    # Norm test
-#    normalizer = preprocessing.Normalizer().fit(input_train)
-#    new_input_train = normalizer.transform(input_train)
-#    new_input_test = normalizer.transform(input_test)
+    # Split training and test sets
+    bp = len(full_data)*4/5
+    train_features = full_data[:bp,:-1]
+    train_targets = full_data[:bp,-1]
+    test_features = full_data[bp:,:-1]
+    test_targets = full_data[bp:,-1]
     
-    class_pca = Classification(True, input_train, target_train, 
-                                      input_test, target_test,
-                                      PCA = True,
+    class_nopca = Classification(True, train_features, train_targets, 
+                                      test_features, test_targets,
+                                      PCA = False,
                                       Logit = True,
                                       SVC = True,
                                       NuSVC = True,
@@ -44,8 +46,7 @@ if __name__ == '__main__':
                                       LDA = True,
                                       QDA = False)
     
-    
-    class_pca.fit_models(True)
-    class_pca.test_models()
-    
-    class_pca.print_results()
+    class_nopca.fit_models(True)
+    class_nopca.test_models()
+    class_nopca.write_data(False)
+    class_nopca.print_results()
