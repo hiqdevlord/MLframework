@@ -168,7 +168,7 @@ class Classification(object):
             pca = decomposition.PCA()
             pipe = Pipeline(steps=[('pca', pca), ('knn', knn)])
             n_components = [20, 40, 64]
-            n_neighbors = [3,5,9]
+            n_neighbors = [3]#,5,9]
             algorithm = ['ball_tree', 'kd_tree', 'brute']
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
@@ -177,7 +177,7 @@ class Classification(object):
             description = "KNNClassifier"
             if verbose: print "generating {}...".format(description)
             pipe = Pipeline(steps=[('knn', knn)])
-            n_neighbors = [3,5,9]
+            n_neighbors = [3]#,5,9]
             algorithm = ['ball_tree', 'kd_tree', 'brute']
             estimator = GridSearchCV(pipe,
                                      dict(knn__n_neighbors=n_neighbors, knn__algorithm=algorithm))
@@ -388,11 +388,11 @@ class Classification(object):
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components, qda_priors=priors))
         else:
-            description = "LDAClassifier"
+            description = "QDAClassifier"
             if verbose: print "generating {}...".format(description)
             pipe = Pipeline(steps=[('qda', qda)])
             priors = [None]
-            estimator = GridSearchCV(pipe, dict(qda_priors=priors))
+            estimator = GridSearchCV(pipe, dict(qda__priors=priors))
         return [estimator, description]
 
     def fit_models(self, verbose):
@@ -417,6 +417,7 @@ class Classification(object):
         with open(filenames[0], 'wb') as csvfile:
             scores = csv.writer(csvfile, delimiter=',',
                             quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            scores.writerows([["Algorithm", "CrossVal Score", "Test Score"]])
             scores.writerows(self.outdata)
         param_file = open(filenames[1], 'wb')
         for e in self.estimators:
