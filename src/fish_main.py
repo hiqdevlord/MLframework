@@ -19,9 +19,10 @@ import matplotlib.pyplot as plt
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn import metrics
-from sklearn.svm import NuSVC
+from sklearn.svm import SVC, NuSVC
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
+from sklearn.feature_selection import RFE
 
 if __name__ == '__main__':
     full_data = np.genfromtxt("train_data.csv",delimiter=',')
@@ -145,10 +146,10 @@ if __name__ == '__main__':
 #    
 #    preds = clf.predict(test_features)
 #    
-#    print(classification_report(test_targets, preds, labels = [1,2,3,4,5,6],target_names=['SB', 'SS', 'ST', 'T', 'TB', 'U']))
-#    
-##    labels = ['SB', 'SS', 'ST', 'T', 'TB', 'U']
-#    cnf = confusion_matrix(test_targets, preds, labels=[1,2,3,4,5,6])
+#    print(classification_report(test_targets, preds, labels = [1,2,3,4],target_names=['B', 'S', 'T', 'U']))
+#
+#    labels = ['B', 'S', 'T', 'U']
+#    cnf = confusion_matrix(test_targets, preds, labels=[1,2,3,4])
 #    
 #    fig = plt.figure()
 #    ax = fig.add_subplot(111)
@@ -177,22 +178,55 @@ if __name__ == '__main__':
 #    clf = RandomForestClassifier(bootstrap=True, n_estimators=15, criterion='entropy', max_depth=5)
 #    clf.fit(train_features, train_targets)
 #    print clf.score(test_features, test_targets)
-    
+#    
+#    preds = clf.predict(test_features)
+#    
+#    print(classification_report(test_targets, preds, labels = [1,2,3,4],target_names=['B', 'S', 'T', 'U']))
+#    
+#    labels = ['B', 'S', 'T', 'U']
+#    cnf = confusion_matrix(test_targets, preds, labels=[1,2,3,4])
+#    
+#    fig = plt.figure()
+#    ax = fig.add_subplot(111)
+#    cax = ax.matshow(cnf)
+#    fig.colorbar(cax)
+#    ax.set_xticklabels(['']+labels)
+#    ax.set_yticklabels(['']+labels)
+#    plt.show()
     ###############################################################################
     
     # Exploring Gradient Boosting
 
-    pipeline = Pipeline([
-              ('clf', GradientBoostingClassifier()),
-              ])
-    
-    parameters = {
-            'clf__max_depth': [2, 3, 5],
-            'clf__n_estimators': [200],
-            'clf__learn_rate': [0.05, 0.1, 0.4]
-    }
-    
-    workflow(pipeline, parameters, train_features, train_targets)
+#    pipeline = Pipeline([
+#              ('clf', GradientBoostingClassifier()),
+#              ])
+#    
+#    parameters = {
+#            'clf__max_depth': [2, 3, 5],
+#            'clf__n_estimators': [200],
+#            'clf__learn_rate': [0.05, 0.1, 0.4]
+#    }
+#    
+#    workflow(pipeline, parameters, train_features, train_targets)
+#
+#    clf = GradientBoostingClassifier(max_depth=5, n_estimators=200, learn_rate=0.4)
+#    clf.fit(train_features, train_targets)
+#    print clf.score(test_features, test_targets)
+#    
+#    preds = clf.predict(test_features)
+#    
+#    print(classification_report(test_targets, preds, labels = [1,2,3,4],target_names=['B', 'S', 'T', 'U']))
+#    
+#    labels = ['B', 'S', 'T', 'U']
+#    cnf = confusion_matrix(test_targets, preds, labels=[1,2,3,4])
+#    
+#    fig = plt.figure()
+#    ax = fig.add_subplot(111)
+#    cax = ax.matshow(cnf)
+#    fig.colorbar(cax)
+#    ax.set_xticklabels(['']+labels)
+#    ax.set_yticklabels(['']+labels)
+#    plt.show()
 
     ###############################################################################
     
@@ -214,6 +248,21 @@ if __name__ == '__main__':
 #    clf = NuSVC(kernel='rbf',nu=0.15)
 #    clf.fit(test_features, test_targets)
 #    print clf.score(test_features, test_targets)
+#    
+#    preds = clf.predict(test_features)
+#    
+#    print(classification_report(test_targets, preds, labels = [1,2,3,4],target_names=['B', 'S', 'T', 'U']))
+#    
+#    labels = ['B', 'S', 'T', 'U']
+#    cnf = confusion_matrix(test_targets, preds, labels=[1,2,3,4])
+#    
+#    fig = plt.figure()
+#    ax = fig.add_subplot(111)
+#    cax = ax.matshow(cnf)
+#    fig.colorbar(cax)
+#    ax.set_xticklabels(['']+labels)
+#    ax.set_yticklabels(['']+labels)
+#    plt.show()
     
     ###############################################################################
     
@@ -291,5 +340,38 @@ if __name__ == '__main__':
             pl.yticks(())
             pl.show()
         
-    #clustering(full_data[:,:-1], full_data[:,-1],False)
+#    clustering(full_data[:,:-1], full_data[:,-1],False)
+    
+    est = KMeans(init='k-means++', k=len(np.unique(full_data[:,-1])), n_init=10)
+    est.fit(full_data[:,:-1])
+    centers = est.cluster_centers_
+    
+    svc = SVC(kernel="linear", C=1)
+    rfe = RFE(estimator=svc, n_features_to_select=3, step=1)
+    rfe.fit(full_data[:,:-1], full_data[:,-1])
+    ranking = rfe.ranking_
+    print ranking
+    
+    import matplotlib
+    from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+    
+    best_indx = 2
+    sec_indx = 9
+    third_indx = 16
+    
+    labels = est.labels_
+
+    fig = matplotlib.figure.Figure(figsize=(6,6))
+    canvas = FigureCanvas(fig)
+    ax = fig.add_subplot(111)
+    # Set the X Axis label.
+    ax.set_xlabel('Median Depth',fontsize=12)
+
+    # Set the Y Axis label.
+    ax.set_ylabel('Mean Temp',fontsize=12)
+    ax.grid(linestyle='-',color='0.750')#')
+    ax.scatter(full_data[:,best_indx],full_data[:,sec_indx],c=full_data[:,-1].astype(np.float))
+    
+    canvas.print_figure('cluster_scat2.pdf',dpi=500)
+    
     
