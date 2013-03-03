@@ -14,7 +14,14 @@ from sklearn.grid_search import GridSearchCV
 from pprint import pprint
 from time import time
 from sklearn.metrics import classification_report, confusion_matrix
+import pylab as pl
 import matplotlib.pyplot as plt
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn import metrics
+from sklearn.svm import NuSVC
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
 
 if __name__ == '__main__':
     full_data = np.genfromtxt("train_data.csv",delimiter=',')
@@ -22,7 +29,7 @@ if __name__ == '__main__':
     # Scale Features
     from sklearn import preprocessing
     scaler = preprocessing.Scaler().fit(full_data[:,:-1])
-#    full_data[:,:-1] = scaler.transform(full_data[:,:-1])
+    full_data[:,:-1] = scaler.transform(full_data[:,:-1])
 
     # Split training and test sets
     train_features, test_features, train_targets, test_targets = cross_validation.train_test_split(full_data[:,:-1], 
@@ -34,20 +41,20 @@ if __name__ == '__main__':
         class_nopca = Classification(True, tr_features, tr_targets, 
                                       te_features, te_targets,
                                       PCA = False,
-                                      Logit = True,
-                                      SVC = True,
-                                      NuSVC = False,
-                                      SGDC = True,
-                                      KNNC=  True,
+                                      Logit = False,
+                                      SVC = False,
+                                      NuSVC = True,
+                                      SGDC = False,
+                                      KNNC=  False,
                                       RNNC = False,
                                       GaussNB = False,
-                                      MultiNB = True, 
+                                      MultiNB = False, 
                                       BernNB = False,
-                                      DTC = True,
-                                      RFC = True,
-                                      ETC = True,
-                                      GBC = True,
-                                      LDA = True,
+                                      DTC = False,
+                                      RFC = False,
+                                      ETC = False,
+                                      GBC = False,
+                                      LDA = False,
                                       QDA = False)
     
         class_nopca.fit_models(verbose)
@@ -64,7 +71,7 @@ if __name__ == '__main__':
         print "Performing grid search..."
         print "pipeline:", [name for name, _ in pipe.steps]
         print "parameters:"
-        pprint(parameters)
+        pprint(params)
         t0 = time()
         grid_search.fit(inputs, targets)
         print "done in %0.3fs" % (time() - t0)
@@ -73,7 +80,7 @@ if __name__ == '__main__':
         print "Best CV score: %0.3f" % grid_search.best_score_
         print "Best parameters set:"
         best_parameters = grid_search.best_estimator_.get_params()
-        for param_name in sorted(parameters.keys()):
+        for param_name in sorted(params.keys()):
             print "\t%s: %r" % (param_name, best_parameters[param_name])
     
     
@@ -86,34 +93,203 @@ if __name__ == '__main__':
     
     # Exploring Logistic regression
     
+#    pipeline = Pipeline([
+#              ('clf', LogisticRegression()),
+#              ])
+#    
+#    parameters = {
+#            'clf__C': (np.logspace(-4, 4, 7)),
+#            'clf__penalty': ('l1', 'l2'),
+#    }
+#    
+#    workflow(pipeline, parameters, train_features, train_targets)
+#    
+#    clf = LogisticRegression(penalty='l1', C=1.0)
+#    clf.fit(train_features, train_targets)
+#    print clf.score(test_features, test_targets)
+#    
+#    preds = clf.predict(test_features)
+#    
+#    print(classification_report(test_targets, preds, labels = [1,2,3,4,5,6],target_names=['SB', 'SS', 'ST', 'T', 'TB', 'U']))
+#    
+#    labels = ['SB', 'SS', 'ST', 'T', 'TB', 'U']
+#    cnf = confusion_matrix(test_targets, preds, labels=[1,2,3,4,5,6])
+#    
+#    fig = plt.figure()
+#    ax = fig.add_subplot(111)
+#    cax = ax.matshow(cnf)
+#    fig.colorbar(cax)
+#    ax.set_xticklabels(['']+labels)
+#    ax.set_yticklabels(['']+labels)
+#    plt.show()
+    
+    ###############################################################################
+    
+    # Exploring KNN
+    
+#    pipeline = Pipeline([
+#              ('clf', KNeighborsClassifier()),
+#              ])
+#    
+#    parameters = {
+#            'clf__n_neighbors': [3,5],
+#            'clf__weights': ['uniform', 'distance'],
+#            'clf__algorithm': ['ball_tree', 'kd_tree', 'brute']
+#    }
+#    
+#    workflow(pipeline, parameters, train_features, train_targets)
+#    
+#    clf = KNeighborsClassifier(n_neighbors=3, weights='uniform', algorithm='ball_tree')
+#    clf.fit(train_features, train_targets)
+#    print clf.score(test_features, test_targets)
+#    
+#    preds = clf.predict(test_features)
+#    
+#    print(classification_report(test_targets, preds, labels = [1,2,3,4,5,6],target_names=['SB', 'SS', 'ST', 'T', 'TB', 'U']))
+#    
+##    labels = ['SB', 'SS', 'ST', 'T', 'TB', 'U']
+#    cnf = confusion_matrix(test_targets, preds, labels=[1,2,3,4,5,6])
+#    
+#    fig = plt.figure()
+#    ax = fig.add_subplot(111)
+#    cax = ax.matshow(cnf)
+#    fig.colorbar(cax)
+#    ax.set_xticklabels(['']+labels)
+#    ax.set_yticklabels(['']+labels)
+#    plt.show()
+
+    ###############################################################################
+    
+    # Exploring Random Forests
+#    pipeline = Pipeline([
+#              ('clf', RandomForestClassifier(n_jobs=1)),
+#              ])
+#    
+#    parameters = {
+#            'clf__n_estimators': [5, 10, 15],
+#            'clf__criterion': ['entropy', 'gini'],
+#            'clf__max_depth': [None, 3, 5, 7],
+#            'clf__bootstrap': [True, False]
+#    }
+#    
+#    workflow(pipeline, parameters, train_features, train_targets)
+#    
+#    clf = RandomForestClassifier(bootstrap=True, n_estimators=15, criterion='entropy', max_depth=5)
+#    clf.fit(train_features, train_targets)
+#    print clf.score(test_features, test_targets)
+    
+    ###############################################################################
+    
+    # Exploring Gradient Boosting
+
     pipeline = Pipeline([
-              ('clf', LogisticRegression()),
+              ('clf', GradientBoostingClassifier()),
               ])
     
     parameters = {
-            'clf__C': (np.logspace(-4, 4, 7)),
-            'clf__penalty': ('l1', 'l2'),
+            'clf__max_depth': [2, 3, 5],
+            'clf__n_estimators': [200],
+            'clf__learn_rate': [0.05, 0.1, 0.4]
     }
+    
+    workflow(pipeline, parameters, train_features, train_targets)
+
+    ###############################################################################
+    
+    # Exploring NuSVC
+    
+#    pipeline = Pipeline([
+#              ('clf', NuSVC()),
+#              ])
+#    
+#    parameters = {
+#            'clf__kernel': ['poly', 'rbf'],
+#            'clf__nu': [0.05, 0.1, 0.15, 0.25],
+#            'clf__degree': [2,3,4],
+#            'clf__gamma': [0.0,0.1,1,10]
+#    }
     
     #workflow(pipeline, parameters, train_features, train_targets)
     
-    clf = LogisticRegression(penalty='l1', C=1.0)
-    clf.fit(train_features, train_targets)
-    print clf.score(test_features, test_targets)
+#    clf = NuSVC(kernel='rbf',nu=0.15)
+#    clf.fit(test_features, test_targets)
+#    print clf.score(test_features, test_targets)
     
-    preds = clf.predict(test_features)
+    ###############################################################################
     
-    print(classification_report(test_targets, preds, labels = [1,2,3,4,5,6],target_names=['SB', 'SS', 'ST', 'T', 'TB', 'U']))
+    # Clustering
     
-    labels = ['SB', 'SS', 'ST', 'T', 'TB', 'U']
-    cnf = confusion_matrix(test_targets, preds, labels=[1,2,3,4,5,6])
+    def clustering(inputs, targets, vis):
+        n_samples, n_features = inputs.shape
+        n_labels = len(np.unique(targets))
+        #labels = digits.target
     
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    cax = ax.matshow(cnf)
-    fig.colorbar(cax)
-    ax.set_xticklabels(['']+labels)
-    ax.set_yticklabels(['']+labels)
-    plt.show()
+        sample_size = 300
     
+        print("n_digits: %d, \t n_samples %d, \t n_features %d"
+              % (n_labels, n_samples, n_features))
+        
+        print(79 * '_')
+        print('% 9s' % 'init'
+              '    time  inertia    homo   compl  v-meas     ARI AMI  silhouette')
+        
+        def bench_k_means(estimator, name, data):
+            t0 = time()
+            estimator.fit(data)
+            params = estimator.cluster_centers_
+            pprint(params)
+            print('% 9s   %.2fs    %i   %.3f   %.3f   %.3f   %.3f   %.3f    %.3f'
+                  % (name, (time() - t0), estimator.inertia_,
+                     metrics.homogeneity_score(targets, estimator.labels_),
+                     metrics.completeness_score(targets, estimator.labels_),
+                     metrics.v_measure_score(targets, estimator.labels_),
+                     metrics.adjusted_rand_score(targets, estimator.labels_),
+                     metrics.adjusted_mutual_info_score(targets,  estimator.labels_),
+                     metrics.silhouette_score(data, estimator.labels_,
+                                              metric='euclidean',
+                                              sample_size=sample_size)))
+        
+        bench_k_means(KMeans(init='k-means++', k=n_labels, n_init=10),
+                      name="k-means++", data=inputs)
+        
+        if vis:
+            reduced_data = PCA(n_components=2).fit_transform(inputs)
+            kmeans = KMeans(init='k-means++', k=n_labels, n_init=10)
+            kmeans.fit(reduced_data)
+            
+            # Step size of the mesh. Decrease to increase the quality of the VQ.
+            h = .02     # point in the mesh [x_min, m_max]x[y_min, y_max].
+            
+            # Plot the decision boundary. For that, we will asign a color to each
+            x_min, x_max = reduced_data[:, 0].min() + 1, reduced_data[:, 0].max() - 1
+            y_min, y_max = reduced_data[:, 1].min() + 1, reduced_data[:, 1].max() - 1
+            xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+            
+            # Obtain labels for each point in mesh. Use last trained model.
+            Z = kmeans.predict(np.c_[xx.ravel(), yy.ravel()])
+            
+            # Put the result into a color plot
+            Z = Z.reshape(xx.shape)
+            pl.figure(1)
+            pl.clf()
+            pl.imshow(Z, interpolation='nearest',
+                      extent=(xx.min(), xx.max(), yy.min(), yy.max()),
+                      cmap=pl.cm.Paired,
+                      aspect='auto', origin='lower')
+            
+            pl.plot(reduced_data[:, 0], reduced_data[:, 1], 'k.', markersize=2)
+            # Plot the centroids as a white X
+            centroids = kmeans.cluster_centers_
+            pl.scatter(centroids[:, 0], centroids[:, 1],
+                       marker='x', s=169, linewidths=3,
+                       color='w', zorder=10)
+            pl.title('K-means clustering on the dive data set (PCA-reduced data)\n'
+                     'Centroids are marked with white cross')
+            pl.xlim(x_min, x_max)
+            pl.ylim(y_min, y_max)
+            pl.xticks(())
+            pl.yticks(())
+            pl.show()
+        
+    #clustering(full_data[:,:-1], full_data[:,-1],False)
     

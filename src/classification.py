@@ -133,7 +133,7 @@ class Classification(object):
             if verbose: print "generating nu support vector classifier grid search..."
             pipe = Pipeline(steps=[('nusvc', nusvc)])            
             kernels = ['linear', 'poly', 'rbf', 'sigmoid']
-            nu = [0.1]
+            nu = [0.5]
             estimator = GridSearchCV(pipe, dict(nusvc__nu=nu, nusvc__kernel=kernels))
         return [estimator, description]
     
@@ -386,7 +386,7 @@ class Classification(object):
             n_components = [20, 40, 64]
             priors = [None]
             estimator = GridSearchCV(pipe,
-                                     dict(pca__n_components=n_components, qda_priors=priors))
+                                     dict(pca__n_components=n_components, qda__priors=priors))
         else:
             description = "QDAClassifier"
             if verbose: print "generating {}...".format(description)
