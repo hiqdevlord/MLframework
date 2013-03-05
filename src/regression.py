@@ -10,9 +10,12 @@ from sklearn.pipeline import Pipeline
 from sklearn.grid_search import GridSearchCV
 
 from sklearn import decomposition
-from sklearn.linear_model import LogisticRegression, SGDClassifier
-from sklearn.svm import SVC, NuSVC
-from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier
+
+from sklearn.linear_model import LinearRegression, Ridge, LassoLars, ElasticNet, BayesianRidge
+from sklearn.svm import SVR, NuSVR
+from sklearn.neighbors import KNeighborsRegressor, RadiusNeighborsRegressor
+from sklearn.gaussian_process import GaussianProcess
+
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier

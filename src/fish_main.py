@@ -37,7 +37,6 @@ if __name__ == '__main__':
                                                                                                    full_data[:,-1], test_size=0.2, random_state=1)
     
     
-    
     def a_bomb(tr_features, tr_targets, te_features, te_targets, verbose):
         class_nopca = Classification(True, tr_features, tr_targets, 
                                       te_features, te_targets,
@@ -345,33 +344,43 @@ if __name__ == '__main__':
     est = KMeans(init='k-means++', k=len(np.unique(full_data[:,-1])), n_init=10)
     est.fit(full_data[:,:-1])
     centers = est.cluster_centers_
+    ori_centers = scaler.inverse_transform(centers)
+    np.savetxt('cluster_centers.csv', ori_centers, delimiter=',', newline='\n')
     
-    svc = SVC(kernel="linear", C=1)
-    rfe = RFE(estimator=svc, n_features_to_select=3, step=1)
-    rfe.fit(full_data[:,:-1], full_data[:,-1])
-    ranking = rfe.ranking_
-    print ranking
+#    svc = SVC(kernel="linear", C=1)
+#    rfe = RFE(estimator=svc, n_features_to_select=3, step=1)
+#    rfe.fit(full_data[:,:-1], full_data[:,-1])
+#    ranking = rfe.ranking_
+#    print ranking
     
-    import matplotlib
-    from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-    
-    best_indx = 2
-    sec_indx = 9
-    third_indx = 16
-    
+#    import matplotlib
+#    from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+#    
+#    best_indx = 2
+#    sec_indx = 9
+#    third_indx = 16
+#    
     labels = est.labels_
 
-    fig = matplotlib.figure.Figure(figsize=(6,6))
-    canvas = FigureCanvas(fig)
-    ax = fig.add_subplot(111)
-    # Set the X Axis label.
-    ax.set_xlabel('Median Depth',fontsize=12)
-
-    # Set the Y Axis label.
-    ax.set_ylabel('Mean Temp',fontsize=12)
-    ax.grid(linestyle='-',color='0.750')#')
-    ax.scatter(full_data[:,best_indx],full_data[:,sec_indx],c=full_data[:,-1].astype(np.float))
+#    print labels.shape
+#    print full_data[:,:-1].shape
     
-    canvas.print_figure('cluster_scat2.pdf',dpi=500)
-    
+#    ori_data = scaler.inverse_transform(full_data[:,:-1])
+#    
+#    k_means_labelled = np.column_stack((ori_data,labels))
+#    np.savetxt('k_means_labelled.csv', k_means_labelled, delimiter=',', newline='\n')
+#
+#    fig = matplotlib.figure.Figure(figsize=(6,6))
+#    canvas = FigureCanvas(fig)
+#    ax = fig.add_subplot(111)
+#    # Set the X Axis label.
+#    ax.set_xlabel('Median Depth',fontsize=12)
+#
+#    # Set the Y Axis label.
+#    ax.set_ylabel('Mean Temp',fontsize=12)
+#    ax.grid(linestyle='-',color='0.750')#')
+#    ax.scatter(full_data[:,best_indx],full_data[:,sec_indx],c=full_data[:,-1].astype(np.float))
+#    
+#    canvas.print_figure('cluster_scat2.pdf',dpi=500)
+#    
     
