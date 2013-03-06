@@ -22,6 +22,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
 from sklearn.lda import LDA
 from sklearn.qda import QDA
+from sklearn.ensemble.weight_boosting import AdaBoostClassifier
 
 class Classification(object):
     '''
@@ -38,7 +39,7 @@ class Classification(object):
                  KNNC = False, RNNC = False,
                  GaussNB = False, MultiNB = False, BernNB = False,
                  DTC = False,
-                 RFC = False, ETC = False, GBC = False,
+                 RFC = False, ETC = False, GBC = False, adac = False,
                  LDA = False, QDA = False):
         '''
         Constructor
@@ -64,6 +65,7 @@ class Classification(object):
         if RFC: self.estimators.append(self.__gen_rfc_estimator(verbose))
         if ETC: self.estimators.append(self.__gen_etc_estimator(verbose))
         if GBC: self.estimators.append(self.__gen_gbc_estimator(verbose))
+        if adac: self.estimators.append(self.__gen_adac_estimator(verbose))
         if LDA: self.estimators.append(self.__gen_lda_estimator(verbose))
         if QDA: self.estimators.append(self.__gen_qda_estimator(verbose))
         
@@ -355,6 +357,29 @@ class Classification(object):
             max_depth = [1, 3, 5]
             estimator = GridSearchCV(pipe,
                                      dict(gbc__max_depth=max_depth))
+        return [estimator, description]
+    
+    def __gen_adac_estimator(self,verbose):
+        adac = AdaBoostClassifier()
+        if self.PCA:
+            description = "ADAClassifier with PCA"
+            if verbose: print "generating {}...".format(description)
+            pca = decomposition.PCA()
+            pipe = Pipeline(steps=[('pca', pca), ('adac', adac)])
+            n_components = [20, 40, 64]
+            n_estimators = [15, 50, 100, 200]
+            learning_rate = [0.8,1.0,1.2]
+            estimator = GridSearchCV(pipe,
+                                     dict(pca__n_components=n_components,
+                                          adac__learning_rate = learning_rate, adac__n_estimators=n_estimators))
+        else:
+            description = "ADAClassifier"
+            if verbose: print "generating {}...".format(description)
+            pipe = Pipeline(steps=[('adac', adac)])
+            n_estimators = [15, 50, 100, 200]
+            learning_rate = [0.8,1.0,1.2]
+            estimator = GridSearchCV(pipe,
+                                     dict(adac__n_estimators=n_estimators,adac__learning_rate = learning_rate))
         return [estimator, description]
     
     def __gen_lda_estimator(self,verbose):

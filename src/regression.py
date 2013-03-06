@@ -8,19 +8,20 @@ import numpy as np
 
 from sklearn.pipeline import Pipeline
 from sklearn.grid_search import GridSearchCV
+from sklearn import cross_validation
 
 from sklearn import decomposition
 
-from sklearn.linear_model import LinearRegression, Ridge, LassoLars, ElasticNet, BayesianRidge
+from sklearn.linear_model import LinearRegression, Ridge, LassoCV, ElasticNet
 from sklearn.svm import SVR, NuSVR
 from sklearn.neighbors import KNeighborsRegressor, RadiusNeighborsRegressor
 from sklearn.gaussian_process import GaussianProcess
-
-from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor, GradientBoostingRegressor, AdaBoostRegressor
 from sklearn.lda import LDA
 from sklearn.qda import QDA
+from sklearn.ensemble.forest import RandomForestRegressor
+import sklearn
 
 class Regression(object):
     '''
@@ -32,16 +33,15 @@ class Regression(object):
                  inputs_train_val, targets_train_val,
                  inputs_test, targets_test, 
                  PCA = False,
-                 Logit = False, perceptron = False, SGDC = True,
-                 SVC = False, NuSVC = False, 
-                 KNNC = False, RNNC = False,
-                 GaussNB = False, MultiNB = False, BernNB = False,
-                 DTC = False,
-                 RFC = False, ETC = False, GBC = False,
-                 LDA = False, QDA = False):
+                 linreg = False, ridge = False, lasso = False,
+                 svr = False, nusvr = False, 
+                 KNNR = False, RNNR = False,
+                 gausp = False,
+                 dtr = False, rfr = False, etr = False, gbr = False, adar = False):
         '''
         Constructor
         '''
+        self.NFOLDS = 10
         self.inputs_train_val = inputs_train_val
         self.targets_train_val = targets_train_val
         self.inputs_test = inputs_test
@@ -50,349 +50,320 @@ class Regression(object):
         
         self.estimators = []
         
-        if Logit: self.estimators.append(self.__gen_logit_estimator(verbose))
-        if SVC: self.estimators.append(self.__gen_svc_estimator(verbose))
-        if NuSVC: self.estimators.append(self.__gen_nusvc_estimator(verbose))
-        if SGDC: self.estimators.append(self.__gen_sgd_estimator(verbose))
-        if KNNC: self.estimators.append(self.__gen_knn_estimator(verbose))
-        if RNNC: self.estimators.append(self.__gen_rnn_estimator(verbose))
-        if GaussNB: self.estimators.append(self.__gen_gnb_estimator(verbose))
-        if MultiNB: self.estimators.append(self.__gen_mnb_estimator(verbose))
-        if BernNB: self.estimators.append(self.__gen_bnb_estimator(verbose))
-        if DTC: self.estimators.append(self.__gen_dtc_estimator(verbose))
-        if RFC: self.estimators.append(self.__gen_rfc_estimator(verbose))
-        if ETC: self.estimators.append(self.__gen_etc_estimator(verbose))
-        if GBC: self.estimators.append(self.__gen_gbc_estimator(verbose))
-        if LDA: self.estimators.append(self.__gen_lda_estimator(verbose))
-        if QDA: self.estimators.append(self.__gen_qda_estimator(verbose))
-        
+        if linreg: self.estimators.append(self.__gen_linreg_estimator(verbose))
+        if ridge: self.estimators.append(self.__gen_ridge_estimator(verbose))
+        if lasso: self.estimators.append(self.__gen_lassocv_estimator(verbose))
+        if svr: self.estimators.append(self.__gen_svr_estimator(verbose))
+        if nusvr: self.estimators.append(self.__gen_nusvr_estimator(verbose))
+        if KNNR: self.estimators.append(self.__gen_knnr_estimator(verbose))
+        if RNNR: self.estimators.append(self.__gen_rnnr_estimator(verbose))
+        if gausp: self.estimators.append(self.__gen_gausp_estimator(verbose))
+        if dtr: self.estimators.append(self.__gen_dtr_estimator(verbose))
+        if rfr: self.estimators.append(self.__gen_rfr_estimator(verbose))
+        if etr: self.estimators.append(self.__gen_etr_estimator(verbose))
+        if gbr: self.estimators.append(self.__gen_gbr_estimator(verbose))
+        if adar: self.estimators.append(self.__gen_adar_estimator(verbose))
         self.outdata = []
         
 
-    def __gen_logit_estimator(self,verbose):
-        logistic = LogisticRegression()
+    def __gen_linreg_estimator(self,verbose):
+        linreg = LinearRegression()
         if self.PCA:
-            description = "logit classifier with PCA"
-            if verbose: print "generating logit classifier grid search with PCA..."
+            description = "logistic regression with PCA"
+            if verbose: print "generating linear regressor with PCA..."
             pca = decomposition.PCA()
-            pipe = Pipeline(steps=[('pca', pca), ('logistic', logistic)])
+            pipe = Pipeline(steps=[('pca', pca), ('linreg', linreg)])
             n_components = [20, 40, 64]
-            Cs = np.logspace(-4, 4, 3)
+            normalize = [True, False]
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
-                                     logistic__C=Cs))
+                                     linreg__normalize=normalize), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else: 
-            description = "logit classifier"
-            if verbose: print "generating logit classifier grid search..."
-            pipe = Pipeline(steps=[('logistic', logistic)])
-            Cs = np.logspace(-4, 4, 3)
+            description = "logistic regression"
+            if verbose: print "generating logistic regression grid search..."
+            pipe = Pipeline(steps=[('linreg', linreg)])
+            normalize = [True, False]
             estimator = GridSearchCV(pipe,
-                                     dict(logistic__C=Cs))
+                                     dict(linreg__normalize=normalize), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
-    def __gen_svc_estimator(self,verbose):
-        svc = SVC()
+    def __gen_ridge_estimator(self,verbose):
+        ridge = Ridge(copy_X=True)
         if self.PCA:
-            description = "SVC with PCA"
-            if verbose: print "generating support vector classifier grid search with PCA..."
+            description = "ridge regression with PCA"
+            if verbose: print "generating {} grid search...".format(description)
             pca = decomposition.PCA()
-            pipe = Pipeline(steps=[('pca', pca), ('svc', svc)])
+            pipe = Pipeline(steps=[('pca', pca), ('ridge', ridge)])
             n_components = [20, 40, 64]
-            
-            kernels = ['linear', 'poly', 'rbf', 'sigmoid']
-            Cs = np.logspace(-4, 4, 3)
+            normalize = [True, False]
+            alpha = [0.2, 0.5, 1.0, 1.5]
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
-                                     svc__C=Cs,svc__kernel=kernels))
-        else:
-            description = "SVC"
-            if verbose: print "generating support vector classifier grid search..."
-            pipe = Pipeline(steps=[('svc', svc)])            
-            kernels = ['linear', 'poly', 'rbf', 'sigmoid']
-            Cs = np.logspace(-4, 4, 3)
+                                     ridge__normalize=normalize, ridge__alpha=alpha), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
+        else: 
+            description = "ridge regression"
+            if verbose: print "generating {} grid search...".format(description)
+            pipe = Pipeline(steps=[('ridge', ridge)])
+            normalize = [True, False]
+            alpha = [0.2, 0.5, 1.0, 1.5]
             estimator = GridSearchCV(pipe,
-                                     dict(svc__C=Cs, svc__kernel=kernels))
+                                     dict(ridge__normalize=normalize, ridge__alpha=alpha), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
-    def __gen_nusvc_estimator(self,verbose):
-        nusvc = NuSVC()
+    def __gen_lassocv_estimator(self,verbose):
+        lasso = LassoCV()
         if self.PCA:
-            description= "NuSVC with PCA"
-            if verbose: print "generating nu support vector classifier grid search with PCA..."
+            description = "lasso regression with PCA"
+            if verbose: print "generating {} grid search...".format(description)
             pca = decomposition.PCA()
-            pipe = Pipeline(steps=[('pca', pca), ('nusvc', nusvc)])
+            pipe = Pipeline(steps=[('pca', pca), ('lasso', lasso)])
+            n_components = [20, 40, 64]
+            cv = [cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS)]
+            estimator = GridSearchCV(pipe,
+                                     dict(pca__n_components=n_components,
+                                     lasso__cv=cv))
+        else: 
+            description = "lasso regression"
+            if verbose: print "generating {} grid search...".format(description)
+            pipe = Pipeline(steps=[('lasso', lasso)])
+            cv = [cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS)]
+            estimator = GridSearchCV(pipe,
+                                     dict(lasso__cv=cv))
+        return [estimator, description]
+
+
+    
+    def __gen_svr_estimator(self,verbose):
+        svr = SVR()
+        if self.PCA:
+            description = "SVR with PCA"
+            if verbose: print "generating {} grid search...".format(description)
+            pca = decomposition.PCA()
+            pipe = Pipeline(steps=[('pca', pca), ('svr', svr)])
+            n_components = [20, 40, 64]
+            epsilon = [np.linspace(0.05,0.2,4)]
+            kernels = ['linear', 'poly', 'rbf', 'sigmoid']
+            Cs = np.logspace(-4, 4, 3)
+            estimator = GridSearchCV(pipe, dict(pca__n_components=n_components,svr__C=Cs,svr__kernel=kernels,svr__epsilon=epsilon), 
+                                     n_jobs=-1, verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
+        else:
+            description = "SVR"
+            if verbose: print "generating {} grid search...".format(description)
+            pipe = Pipeline(steps=[('svr', svr)])
+            epsilon = [np.linspace(0.05,0.2,4)]            
+            kernels = ['linear', 'poly', 'rbf', 'sigmoid']
+            Cs = np.logspace(-4, 4, 3)
+            estimator = GridSearchCV(pipe, dict(svr__C=Cs, svr__kernel=kernels,svr__epsilon=epsilon), 
+                                     n_jobs=-1, verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
+        return [estimator, description]
+    
+    def __gen_nusvr_estimator(self,verbose):
+        nusvr = NuSVR()
+        if self.PCA:
+            description= "NuSVR with PCA"
+            if verbose: print "generating {} grid search...".format(description)
+            pca = decomposition.PCA()
+            pipe = Pipeline(steps=[('pca', pca), ('nusvr', nusvr)])
             n_components = [20, 40, 64]
             kernels = ['linear', 'poly', 'rbf', 'sigmoid']
             nu = [0.2, 0.4, 0.6, 0.8]
-            estimator = GridSearchCV(pipe,
-                                     dict(pca__n_components=n_components,
-                                     nusvc__nu=nu,nusvc__kernel=kernels))
+            estimator = GridSearchCV(pipe, dict(pca__n_components=n_components, nusvr__nu=nu,nusvr__kernel=kernels), 
+                                     n_jobs=-1, verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else:
-            description= "NuSVC"
-            if verbose: print "generating nu support vector classifier grid search..."
-            pipe = Pipeline(steps=[('nusvc', nusvc)])            
+            description= "NuSVR"
+            if verbose: print "generating {} grid search...".format(description)
+            pipe = Pipeline(steps=[('nusvr', nusvr)])            
             kernels = ['linear', 'poly', 'rbf', 'sigmoid']
             nu = [0.2, 0.4, 0.6, 0.8]
-            estimator = GridSearchCV(pipe, dict(nusvc__nu=nu, nusvc__kernel=kernels))
+            estimator = GridSearchCV(pipe, dict(nusvr__nu=nu, nusvr__kernel=kernels), 
+                                     n_jobs=-1, verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
-    def __gen_sgd_estimator(self,verbose):
-        sgd = SGDClassifier()
-        if self.PCA:
-            description = "SGDClassifier with PCA"
-            if verbose: print "generating {}...".format(description)
-            pca = decomposition.PCA()
-            pipe = Pipeline(steps=[('pca', pca), ('sgd', sgd)])
-            n_components = [20, 40, 64]
-            loss = ['hinge', 'log', 'modified_huber']
-            penalty = ['l2', 'l1', 'elasticnet']
-            estimator = GridSearchCV(pipe,
-                                     dict(pca__n_components=n_components,
-                                     sgd__loss=loss, sgd__penalty=penalty))
-        else:
-            description = "SGDClassifier"
-            if verbose: print "generating {}...".format(description)
-            pipe = Pipeline(steps=[('sgd', sgd)])
-            loss = ['hinge', 'log', 'modified_huber']
-            penalty = ['l2', 'l1', 'elasticnet']
-            estimator = GridSearchCV(pipe,
-                                     dict(sgd__loss=loss, sgd__penalty=penalty))
-        return [estimator, description]
     
-    def __gen_knn_estimator(self,verbose):
-        knn = KNeighborsClassifier()
+    def __gen_knnr_estimator(self,verbose):
+        knn = KNeighborsRegressor()
         if self.PCA:
-            description = "KNNClassifier with PCA"
+            description = "KNNRegressor with PCA"
             if verbose: print "generating {}...".format(description)
             pca = decomposition.PCA()
             pipe = Pipeline(steps=[('pca', pca), ('knn', knn)])
             n_components = [20, 40, 64]
             n_neighbors = [3,5,9]
-            algorithm = ['ball_tree', 'kd_tree', 'brute']
-            estimator = GridSearchCV(pipe,
-                                     dict(pca__n_components=n_components,
-                                     knn__n_neighbors=n_neighbors, knn__algorithm=algorithm))
+            estimator = GridSearchCV(pipe, dict(pca__n_components=n_components, knn__n_neighbors=n_neighbors), 
+                                     n_jobs=-1, verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else:
-            description = "KNNClassifier"
+            description = "KNNRegressor"
             if verbose: print "generating {}...".format(description)
             pipe = Pipeline(steps=[('knn', knn)])
             n_neighbors = [3,5,9]
-            algorithm = ['ball_tree', 'kd_tree', 'brute']
-            estimator = GridSearchCV(pipe,
-                                     dict(knn__n_neighbors=n_neighbors, knn__algorithm=algorithm))
+            estimator = GridSearchCV(pipe, dict(knn__n_neighbors=n_neighbors), 
+                                     n_jobs=-1, verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
-    def __gen_rnn_estimator(self,verbose):
-        rnn = RadiusNeighborsClassifier(outlier_label=-1)
+    def __gen_rnnr_estimator(self,verbose):
+        rnn = RadiusNeighborsRegressor()
         if self.PCA:
-            description = "RNNClassifier with PCA"
+            description = "RNNRegressor with PCA"
             if verbose: print "generating {}...".format(description)
             pca = decomposition.PCA()
             pipe = Pipeline(steps=[('pca', pca), ('rnn', rnn)])
             n_components = [20, 40, 64]
-            radius = [1.0]
-            algorithm = ['auto'] # ['ball_tree', 'kd_tree', 'brute']
-            estimator = GridSearchCV(pipe,
-                                     dict(pca__n_components=n_components,
-                                     rnn__radius=radius, rnn__algorithm=algorithm))
+            algorithm = ['auto'] 
+            estimator = GridSearchCV(pipe, dict(pca__n_components=n_components, rnn__algorithm=algorithm), 
+                                     n_jobs=-1, verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else:
-            description = "RNNClassifier"
+            description = "RNNRegressor"
             if verbose: print "generating {}...".format(description)
             pipe = Pipeline(steps=[('rnn', rnn)])
-            radius = [1.6]
-            algorithm = ['auto'] #['ball_tree', 'kd_tree', 'brute']
-            estimator = GridSearchCV(pipe,
-                                     dict(rnn__radius=radius, rnn__algorithm=algorithm))
+            algorithm = ['auto']
+            estimator = GridSearchCV(pipe, dict(rnn__algorithm=algorithm), 
+                                     n_jobs=-1, verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
-    def __gen_gnb_estimator(self,verbose):
-        gnb = GaussianNB()
+    def __gen_gausp_estimator(self,verbose):
+        gausp = GaussianProcess()
         if self.PCA:
-            description = "GaussianNB with PCA"
+            description = "Gaussian Process with PCA"
             if verbose: print "generating {}...".format(description)
             pca = decomposition.PCA()
-            pipe = Pipeline(steps=[('pca', pca), ('gnb', gnb)])
+            pipe = Pipeline(steps=[('pca', pca), ('gausp', gausp)])
             n_components = [20, 40, 64]
-            estimator = GridSearchCV(pipe,
-                                     dict(pca__n_components=n_components))
+            regr = ['constant', 'linear']
+            estimator = GridSearchCV(pipe, dict(pca__n_components=n_components, gausp__regr=regr), 
+                                     n_jobs=-1, verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else:
-            description = "GaussianNB"
+            description = "Gaussian Process"
             if verbose: print "generating {}...".format(description)
-            pipe = Pipeline(steps=[('gnb', gnb)])
-            estimator = GridSearchCV(pipe,dict())
+            pipe = Pipeline(steps=[('gausp', gausp)])
+            regr = ['constant', 'linear']
+            estimator = GridSearchCV(pipe, dict(gausp__regr=regr), 
+                                     n_jobs=-1, verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
-    def __gen_mnb_estimator(self,verbose):
-        mnb = MultinomialNB(fit_prior=True)
-        if self.PCA:
-            description = "MultinomialNB with PCA"
-            if verbose: print "generating {}...".format(description)
-            pca = decomposition.PCA()
-            pipe = Pipeline(steps=[('pca', pca), ('mnb', mnb)])
-            n_components = [20, 40, 64]
-            estimator = GridSearchCV(pipe,
-                                     dict(pca__n_components=n_components))
-        else:
-            description = "MultinomialNB"
-            if verbose: print "generating {}...".format(description)
-            pipe = Pipeline(steps=[('mnb', mnb)])
-            alpha = [1.0]
-            estimator = GridSearchCV(pipe, dict(mnb__alpha=alpha))
-        return [estimator, description]
     
-    def __gen_bnb_estimator(self,verbose):
-        bnb = BernoulliNB(fit_prior=True)
+
+    def __gen_dtr_estimator(self,verbose):
+        dtr = DecisionTreeRegressor()
         if self.PCA:
-            description = "BernoulliNB with PCA"
+            description = "DTRegressor with PCA"
             if verbose: print "generating {}...".format(description)
             pca = decomposition.PCA()
-            pipe = Pipeline(steps=[('pca', pca), ('bnb', bnb)])
+            pipe = Pipeline(steps=[('pca', pca), ('dtr', dtr)])
             n_components = [20, 40, 64]
-            estimator = GridSearchCV(pipe,
-                                     dict(pca__n_components=n_components))
-        else:
-            description = "BernoulliNB"
-            if verbose: print "generating {}...".format(description)
-            pipe = Pipeline(steps=[('bnb', bnb)])
-            alpha = [1.0]
-            estimator = GridSearchCV(pipe, dict(bnb__alpha=alpha))
-        return [estimator, description]
-    
-    def __gen_dtc_estimator(self,verbose):
-        dtc = DecisionTreeClassifier(random_state=0)
-        if self.PCA:
-            description = "DTClassifier with PCA"
-            if verbose: print "generating {}...".format(description)
-            pca = decomposition.PCA()
-            pipe = Pipeline(steps=[('pca', pca), ('dtc', dtc)])
-            n_components = [20, 40, 64]
-            criteria = ['entropy', 'gini']
             max_depth = [None, 3, 5, 7]
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
-                                          dtc__criterion=criteria, dtc__max_depth=max_depth))
+                                          dtr__max_depth=max_depth))
         else:
-            description = "DTClassifier"
+            description = "DTRegressor"
             if verbose: print "generating {}...".format(description)
-            pipe = Pipeline(steps=[('dtc', dtc)])
-            criteria = ['entropy', 'gini']
+            pipe = Pipeline(steps=[('dtr', dtr)])
             max_depth = [None, 3, 5, 7]
             estimator = GridSearchCV(pipe,
-                                     dict(dtc__criterion=criteria, dtc__max_depth=max_depth))
+                                     dict(dtr__max_depth=max_depth))
         return [estimator, description]
     
-    def __gen_rfc_estimator(self,verbose):
-        rfc = RandomForestClassifier(n_jobs=1)
+
+    def __gen_rfr_estimator(self,verbose):
+        rfr = RandomForestRegressor(n_jobs=1)
         if self.PCA:
-            description = "RFClassifier with PCA"
+            description = "RFRegressor with PCA"
             if verbose: print "generating {}...".format(description)
             pca = decomposition.PCA()
-            pipe = Pipeline(steps=[('pca', pca), ('rfc', rfc)])
+            pipe = Pipeline(steps=[('pca', pca), ('rfr', rfr)])
             n_components = [20, 40, 64]
             n_estimators = [5, 10, 15]
-            criteria = ['entropy', 'gini']
             max_depth = [None, 3, 5, 7]
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
-                                          rfc__criterion=criteria, rfc__max_depth=max_depth,
-                                          rfc__n_estimators=n_estimators))
+                                          rfr__max_depth=max_depth,
+                                          rfr__n_estimators=n_estimators))
         else:
-            description = "RFClassifier"
+            description = "RFRegressor"
             if verbose: print "generating {}...".format(description)
-            pipe = Pipeline(steps=[('rfc', rfc)])
+            pipe = Pipeline(steps=[('rfr', rfr)])
             n_estimators = [5, 10, 15]
-            criteria = ['entropy', 'gini']
             max_depth = [None, 3, 5, 7]
             estimator = GridSearchCV(pipe,
-                                     dict(rfc__criterion=criteria, rfc__max_depth=max_depth,
-                                          rfc__n_estimators=n_estimators))
+                                     dict(rfr__max_depth=max_depth,
+                                          rfr__n_estimators=n_estimators))
         return [estimator, description]
-    
-    def __gen_etc_estimator(self,verbose):
-        etc = ExtraTreesClassifier(n_jobs=1)
+
+
+    def __gen_etr_estimator(self,verbose):
+        etr = ExtraTreesRegressor(n_jobs=1)
         if self.PCA:
-            description = "ETClassifier with PCA"
+            description = "ETRegressor with PCA"
             if verbose: print "generating {}...".format(description)
             pca = decomposition.PCA()
-            pipe = Pipeline(steps=[('pca', pca), ('etc', etc)])
+            pipe = Pipeline(steps=[('pca', pca), ('etr', etr)])
             n_components = [20, 40, 64]
             n_estimators = [5, 10, 15]
-            criteria = ['entropy', 'gini']
             max_depth = [None, 3, 5, 7]
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
-                                          etc__criterion=criteria, etc__max_depth=max_depth,
-                                          etc__n_estimators=n_estimators))
+                                          etr__max_depth=max_depth,
+                                          etr__n_estimators=n_estimators))
         else:
-            description = "ETClassifier"
+            description = "ETRegressor"
             if verbose: print "generating {}...".format(description)
-            pipe = Pipeline(steps=[('etc', etc)])
+            pipe = Pipeline(steps=[('etr', etr)])
             n_estimators = [5, 10, 15]
-            criteria = ['entropy', 'gini']
             max_depth = [None, 3, 5, 7]
             estimator = GridSearchCV(pipe,
-                                     dict(etc__criterion=criteria, etc__max_depth=max_depth,
-                                          etc__n_estimators=n_estimators))
+                                     dict(etr__max_depth=max_depth,
+                                          etr__n_estimators=n_estimators))
         return [estimator, description]
     
-    def __gen_gbc_estimator(self,verbose):
-        gbc = GradientBoostingClassifier(n_estimators=100)
+    
+    def __gen_gbr_estimator(self,verbose):
+        gbr = GradientBoostingRegressor(n_estimators=100)
         if self.PCA:
-            description = "GBClassifier with PCA"
+            description = "GBRegressor with PCA"
             if verbose: print "generating {}...".format(description)
             pca = decomposition.PCA()
-            pipe = Pipeline(steps=[('pca', pca), ('gbc', gbc)])
+            pipe = Pipeline(steps=[('pca', pca), ('gbr', gbr)])
             n_components = [20, 40, 64]
             max_depth = [1, 3, 5]
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
-                                          gbc__max_depth=max_depth))
+                                          gbr__max_depth=max_depth))
         else:
-            description = "GBClassifier"
+            description = "GBRegressor"
             if verbose: print "generating {}...".format(description)
-            pipe = Pipeline(steps=[('gbc', gbc)])
+            pipe = Pipeline(steps=[('gbr', gbr)])
             max_depth = [1, 3, 5]
             estimator = GridSearchCV(pipe,
-                                     dict(gbc__max_depth=max_depth))
+                                     dict(gbr__max_depth=max_depth))
         return [estimator, description]
-    
-    def __gen_lda_estimator(self,verbose):
-        lda = LDA()
+
+    def __gen_adar_estimator(self,verbose):
+        adar = AdaBoostRegressor()
         if self.PCA:
-            description = "LDAClassifier with PCA"
+            description = "ADARegressor with PCA"
             if verbose: print "generating {}...".format(description)
             pca = decomposition.PCA()
-            pipe = Pipeline(steps=[('pca', pca), ('lda', lda)])
+            pipe = Pipeline(steps=[('pca', pca), ('adar', adar)])
             n_components = [20, 40, 64]
-            lda_components=[None]
+            n_estimators = [15, 50, 100, 200]
+            learning_rate = [0.8,1.0,1.2]
             estimator = GridSearchCV(pipe,
-                                     dict(pca__n_components=n_components,lda__n_components=lda_components))
+                                     dict(pca__n_components=n_components,
+                                          adar__learning_rate = learning_rate, adar__n_estimators=n_estimators))
         else:
-            description = "LDAClassifier"
+            description = "ADARegressor"
             if verbose: print "generating {}...".format(description)
-            pipe = Pipeline(steps=[('lda', lda)])
-            lda_components=[None]
-            estimator = GridSearchCV(pipe,dict(lda__n_components=lda_components))
-        return [estimator, description]
-    
-    def __gen_qda_estimator(self,verbose):
-        qda = QDA()
-        if self.PCA:
-            description = "QDAClassifier with PCA"
-            if verbose: print "generating {}...".format(description)
-            pca = decomposition.PCA()
-            pipe = Pipeline(steps=[('pca', pca), ('qda', qda)])
-            n_components = [20, 40, 64]
-            priors = [None]
+            pipe = Pipeline(steps=[('adar', adar)])
+            n_estimators = [15, 50, 100, 200]
+            learning_rate = [0.8,1.0,1.2]
             estimator = GridSearchCV(pipe,
-                                     dict(pca__n_components=n_components, qda_priors=priors))
-        else:
-            description = "LDAClassifier"
-            if verbose: print "generating {}...".format(description)
-            pipe = Pipeline(steps=[('qda', qda)])
-            priors = [None]
-            estimator = GridSearchCV(pipe, dict(qda_priors=priors))
+                                     dict(adar__n_estimators=n_estimators,adar__learning_rate = learning_rate))
         return [estimator, description]
+
 
     def fit_models(self, verbose):
         print "\nfitting models..."

@@ -3,49 +3,60 @@ Created on Feb 18, 2013
 
 @author: Ash Booth
 '''
+import sys
+sys.path.insert(0, '/Users/user/git/scikit-learn')
 
 import numpy as np
 from sklearn import datasets
+from sklearn import cross_validation as cv
+
 from classification import Classification
+from regression import Regression
 
 if __name__ == '__main__':
     
-    # get data
-    digits = datasets.load_digits()
-    
-    input_digits = digits.data
-    target_digits = digits.target
-    input_train, input_test = np.array_split(input_digits[:-1],2) 
-    target_train, target_test = np.array_split(target_digits[:-1],2)
-
-    
+#    # get classification data
+#    digits = datasets.load_digits()
+#    inputs = digits.data
+#    targets = digits.target
 #    
-#    # Norm test
-#    normalizer = preprocessing.Normalizer().fit(input_train)
-#    new_input_train = normalizer.transform(input_train)
-#    new_input_test = normalizer.transform(input_test)
+    # get regression data
+    prices = datasets.load_boston()
+    inputs = prices.data
+    targets = prices.target
+
+    # Scale Features
+    from sklearn import preprocessing
+    scaler = preprocessing.Scaler().fit(inputs)
+    input_digits = scaler.transform(inputs)
     
-    class_pca = Classification(True, input_train, target_train, 
-                                      input_test, target_test,
-                                      PCA = True,
-                                      Logit = True,
-                                      SVC = True,
-                                      NuSVC = True,
-                                      SGDC = True,
-                                      KNNC=  True,
-                                      RNNC = True,
-                                      GaussNB = True,
-                                      MultiNB = False, 
-                                      BernNB = False,
-                                      DTC = True,
-                                      RFC = True,
-                                      ETC = True,
-                                      GBC = True,
-                                      LDA = True,
-                                      QDA = False)
+#    # Normalize Features
+#    normalizer = preprocessing.Normalizer().fit(inputs)
+#    inputs = normalizer.transform(inputs)
+    
+    # Split training and test sets
+    train_features, test_features, train_targets, test_targets = cv.train_test_split(inputs, 
+                                                                                     targets, test_size=0.3, random_state=1)
+
+    print train_features.shape
+    print train_targets.shape
+    
+#    clf = Classification(True, train_features, train_targets, test_features, test_targets,
+#                                      PCA = False, Logit = False,
+#                                      SVC = False, NuSVC = False, SGDC = False,
+#                                      KNNC=  False, RNNC = False,
+#                                      GaussNB = False, MultiNB = False, BernNB = False,
+#                                      DTC = True, RFC = False, ETC = False, GBC = False, adac = True, 
+#                                      LDA = False, QDA = False)
+    
+    reg = Regression(True, train_features, train_targets, test_features, test_targets, PCA = False,
+                      linreg = True, ridge = False, lasso = False,
+                      svr = False, nusvr = False, 
+                      KNNR = False, RNNR = False,
+                      gausp = False, dtr = True, rfr = True, etr = True, gbr = True, adar = True)
     
     
-    class_pca.fit_models(True)
-    class_pca.test_models()
+    reg.fit_models(True)
+    reg.test_models()
     
-    class_pca.print_results()
+    reg.print_results()
