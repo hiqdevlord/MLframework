@@ -23,6 +23,7 @@ from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, Gradi
 from sklearn.lda import LDA
 from sklearn.qda import QDA
 from sklearn.ensemble.weight_boosting import AdaBoostClassifier
+from sklearn import cross_validation
 
 class Classification(object):
     '''
@@ -44,6 +45,7 @@ class Classification(object):
         '''
         Constructor
         '''
+        self.NFOLDS = 5
         self.inputs_train_val = inputs_train_val
         self.targets_train_val = targets_train_val
         self.inputs_test = inputs_test
@@ -83,14 +85,16 @@ class Classification(object):
             Cs = np.logspace(-4, 4, 3)
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
-                                     logistic__C=Cs))
+                                     logistic__C=Cs), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else: 
             description = "logit classifier"
             if verbose: print "generating logit classifier grid search..."
             pipe = Pipeline(steps=[('logistic', logistic)])
             Cs = np.logspace(-4, 4, 3)
             estimator = GridSearchCV(pipe,
-                                     dict(logistic__C=Cs))
+                                     dict(logistic__C=Cs), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
     def __gen_svc_estimator(self,verbose):
@@ -106,7 +110,8 @@ class Classification(object):
             Cs = np.logspace(-4, 4, 3)
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
-                                     svc__C=Cs,svc__kernel=kernels))
+                                     svc__C=Cs,svc__kernel=kernels), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else:
             description = "SVC"
             if verbose: print "generating support vector classifier grid search..."
@@ -114,7 +119,8 @@ class Classification(object):
             kernels = ['linear', 'poly', 'rbf', 'sigmoid']
             Cs = np.logspace(-4, 4, 3)
             estimator = GridSearchCV(pipe,
-                                     dict(svc__C=Cs, svc__kernel=kernels))
+                                     dict(svc__C=Cs, svc__kernel=kernels), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
     def __gen_nusvc_estimator(self,verbose):
@@ -129,14 +135,16 @@ class Classification(object):
             nu = [0.1]
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
-                                     nusvc__nu=nu,nusvc__kernel=kernels))
+                                     nusvc__nu=nu,nusvc__kernel=kernels), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else:
             description= "NuSVC"
             if verbose: print "generating nu support vector classifier grid search..."
             pipe = Pipeline(steps=[('nusvc', nusvc)])            
             kernels = ['linear', 'poly', 'rbf', 'sigmoid']
             nu = [0.5]
-            estimator = GridSearchCV(pipe, dict(nusvc__nu=nu, nusvc__kernel=kernels))
+            estimator = GridSearchCV(pipe, dict(nusvc__nu=nu, nusvc__kernel=kernels), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
     def __gen_sgd_estimator(self,verbose):
@@ -151,7 +159,8 @@ class Classification(object):
             penalty = ['l2', 'l1', 'elasticnet']
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
-                                     sgd__loss=loss, sgd__penalty=penalty))
+                                     sgd__loss=loss, sgd__penalty=penalty), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else:
             description = "SGDClassifier"
             if verbose: print "generating {}...".format(description)
@@ -159,7 +168,8 @@ class Classification(object):
             loss = ['hinge', 'log', 'modified_huber']
             penalty = ['l2', 'l1', 'elasticnet']
             estimator = GridSearchCV(pipe,
-                                     dict(sgd__loss=loss, sgd__penalty=penalty))
+                                     dict(sgd__loss=loss, sgd__penalty=penalty), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
     def __gen_knn_estimator(self,verbose):
@@ -174,7 +184,8 @@ class Classification(object):
             algorithm = ['ball_tree', 'kd_tree', 'brute']
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
-                                     knn__n_neighbors=n_neighbors, knn__algorithm=algorithm))
+                                     knn__n_neighbors=n_neighbors, knn__algorithm=algorithm), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else:
             description = "KNNClassifier"
             if verbose: print "generating {}...".format(description)
@@ -182,7 +193,8 @@ class Classification(object):
             n_neighbors = [3]#,5,9]
             algorithm = ['ball_tree', 'kd_tree', 'brute']
             estimator = GridSearchCV(pipe,
-                                     dict(knn__n_neighbors=n_neighbors, knn__algorithm=algorithm))
+                                     dict(knn__n_neighbors=n_neighbors, knn__algorithm=algorithm), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
     def __gen_rnn_estimator(self,verbose):
@@ -197,7 +209,8 @@ class Classification(object):
             algorithm = ['auto'] # ['ball_tree', 'kd_tree', 'brute']
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
-                                     rnn__radius=radius, rnn__algorithm=algorithm))
+                                     rnn__radius=radius, rnn__algorithm=algorithm), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else:
             description = "RNNClassifier"
             if verbose: print "generating {}...".format(description)
@@ -205,7 +218,8 @@ class Classification(object):
             radius = [1.6]
             algorithm = ['auto'] #['ball_tree', 'kd_tree', 'brute']
             estimator = GridSearchCV(pipe,
-                                     dict(rnn__radius=radius, rnn__algorithm=algorithm))
+                                     dict(rnn__radius=radius, rnn__algorithm=algorithm), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
     def __gen_gnb_estimator(self,verbose):
@@ -217,12 +231,14 @@ class Classification(object):
             pipe = Pipeline(steps=[('pca', pca), ('gnb', gnb)])
             n_components = [20, 40, 64]
             estimator = GridSearchCV(pipe,
-                                     dict(pca__n_components=n_components))
+                                     dict(pca__n_components=n_components), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else:
             description = "GaussianNB"
             if verbose: print "generating {}...".format(description)
             pipe = Pipeline(steps=[('gnb', gnb)])
-            estimator = GridSearchCV(pipe,dict())
+            estimator = GridSearchCV(pipe,dict(), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
     def __gen_mnb_estimator(self,verbose):
@@ -234,13 +250,15 @@ class Classification(object):
             pipe = Pipeline(steps=[('pca', pca), ('mnb', mnb)])
             n_components = [20, 40, 64]
             estimator = GridSearchCV(pipe,
-                                     dict(pca__n_components=n_components))
+                                     dict(pca__n_components=n_components), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else:
             description = "MultinomialNB"
             if verbose: print "generating {}...".format(description)
             pipe = Pipeline(steps=[('mnb', mnb)])
             alpha = [1.0]
-            estimator = GridSearchCV(pipe, dict(mnb__alpha=alpha))
+            estimator = GridSearchCV(pipe, dict(mnb__alpha=alpha), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
     def __gen_bnb_estimator(self,verbose):
@@ -252,13 +270,15 @@ class Classification(object):
             pipe = Pipeline(steps=[('pca', pca), ('bnb', bnb)])
             n_components = [20, 40, 64]
             estimator = GridSearchCV(pipe,
-                                     dict(pca__n_components=n_components))
+                                     dict(pca__n_components=n_components), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else:
             description = "BernoulliNB"
             if verbose: print "generating {}...".format(description)
             pipe = Pipeline(steps=[('bnb', bnb)])
             alpha = [1.0]
-            estimator = GridSearchCV(pipe, dict(bnb__alpha=alpha))
+            estimator = GridSearchCV(pipe, dict(bnb__alpha=alpha), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
     def __gen_dtc_estimator(self,verbose):
@@ -273,7 +293,8 @@ class Classification(object):
             max_depth = [None, 3, 5, 7]
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
-                                          dtc__criterion=criteria, dtc__max_depth=max_depth))
+                                          dtc__criterion=criteria, dtc__max_depth=max_depth), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else:
             description = "DTClassifier"
             if verbose: print "generating {}...".format(description)
@@ -281,7 +302,8 @@ class Classification(object):
             criteria = ['entropy', 'gini']
             max_depth = [None, 3, 5, 7]
             estimator = GridSearchCV(pipe,
-                                     dict(dtc__criterion=criteria, dtc__max_depth=max_depth))
+                                     dict(dtc__criterion=criteria, dtc__max_depth=max_depth), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
     def __gen_rfc_estimator(self,verbose):
@@ -298,7 +320,8 @@ class Classification(object):
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
                                           rfc__criterion=criteria, rfc__max_depth=max_depth,
-                                          rfc__n_estimators=n_estimators))
+                                          rfc__n_estimators=n_estimators), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else:
             description = "RFClassifier"
             if verbose: print "generating {}...".format(description)
@@ -308,7 +331,8 @@ class Classification(object):
             max_depth = [None, 3, 5, 7]
             estimator = GridSearchCV(pipe,
                                      dict(rfc__criterion=criteria, rfc__max_depth=max_depth,
-                                          rfc__n_estimators=n_estimators))
+                                          rfc__n_estimators=n_estimators), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
     def __gen_etc_estimator(self,verbose):
@@ -325,7 +349,8 @@ class Classification(object):
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
                                           etc__criterion=criteria, etc__max_depth=max_depth,
-                                          etc__n_estimators=n_estimators))
+                                          etc__n_estimators=n_estimators), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else:
             description = "ETClassifier"
             if verbose: print "generating {}...".format(description)
@@ -335,7 +360,8 @@ class Classification(object):
             max_depth = [None, 3, 5, 7]
             estimator = GridSearchCV(pipe,
                                      dict(etc__criterion=criteria, etc__max_depth=max_depth,
-                                          etc__n_estimators=n_estimators))
+                                          etc__n_estimators=n_estimators), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
     def __gen_gbc_estimator(self,verbose):
@@ -349,14 +375,16 @@ class Classification(object):
             max_depth = [1, 3, 5]
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
-                                          gbc__max_depth=max_depth))
+                                          gbc__max_depth=max_depth), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else:
             description = "GBClassifier"
             if verbose: print "generating {}...".format(description)
             pipe = Pipeline(steps=[('gbc', gbc)])
             max_depth = [1, 3, 5]
             estimator = GridSearchCV(pipe,
-                                     dict(gbc__max_depth=max_depth))
+                                     dict(gbc__max_depth=max_depth), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
     def __gen_adac_estimator(self,verbose):
@@ -371,7 +399,8 @@ class Classification(object):
             learning_rate = [0.8,1.0,1.2]
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
-                                          adac__learning_rate = learning_rate, adac__n_estimators=n_estimators))
+                                          adac__learning_rate = learning_rate, adac__n_estimators=n_estimators), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else:
             description = "ADAClassifier"
             if verbose: print "generating {}...".format(description)
@@ -379,7 +408,8 @@ class Classification(object):
             n_estimators = [15, 50, 100, 200]
             learning_rate = [0.8,1.0,1.2]
             estimator = GridSearchCV(pipe,
-                                     dict(adac__n_estimators=n_estimators,adac__learning_rate = learning_rate))
+                                     dict(adac__n_estimators=n_estimators,adac__learning_rate = learning_rate), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
     def __gen_lda_estimator(self,verbose):
@@ -392,13 +422,15 @@ class Classification(object):
             n_components = [20, 40, 64]
             lda_components=[None]
             estimator = GridSearchCV(pipe,
-                                     dict(pca__n_components=n_components,lda__n_components=lda_components))
+                                     dict(pca__n_components=n_components,lda__n_components=lda_components), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else:
             description = "LDAClassifier"
             if verbose: print "generating {}...".format(description)
             pipe = Pipeline(steps=[('lda', lda)])
             lda_components=[None]
-            estimator = GridSearchCV(pipe,dict(lda__n_components=lda_components))
+            estimator = GridSearchCV(pipe,dict(lda__n_components=lda_components), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
     
     def __gen_qda_estimator(self,verbose):
@@ -411,13 +443,15 @@ class Classification(object):
             n_components = [20, 40, 64]
             priors = [None]
             estimator = GridSearchCV(pipe,
-                                     dict(pca__n_components=n_components, qda__priors=priors))
+                                     dict(pca__n_components=n_components, qda__priors=priors), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         else:
             description = "QDAClassifier"
             if verbose: print "generating {}...".format(description)
             pipe = Pipeline(steps=[('qda', qda)])
             priors = [None]
-            estimator = GridSearchCV(pipe, dict(qda__priors=priors))
+            estimator = GridSearchCV(pipe, dict(qda__priors=priors), n_jobs=-1, 
+                                     verbose=1, cv=cross_validation.KFold(self.inputs_train_val.shape[0],k=self.NFOLDS))
         return [estimator, description]
 
     def fit_models(self, verbose):
