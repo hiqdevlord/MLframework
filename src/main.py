@@ -51,7 +51,7 @@ if __name__ == '__main__':
                                       SVC = True, NuSVC = True, SGDC = True,
                                       KNNC=  True, RNNC = True,
                                       GaussNB = False, MultiNB = False, BernNB = False,
-                                      DTC = True, RFC = True, ETC = True, GBC = True, adac = True, 
+                                      DTC = True, RFC = True, ETC = True, GBC = True, #adac = True, 
                                       LDA = True, QDA = True)
     
 #    reg = Regression(True, train_features, train_targets, test_features, test_targets, PCA = False,

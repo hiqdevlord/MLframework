@@ -14,8 +14,8 @@ from sklearn.grid_search import GridSearchCV
 from pprint import pprint
 from time import time
 from sklearn.metrics import classification_report, confusion_matrix
-import pylab as pl
-import matplotlib.pyplot as plt
+#import pylab as pl
+#import matplotlib.pyplot as plt
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn import metrics
@@ -41,21 +41,21 @@ if __name__ == '__main__':
         class_nopca = Classification(True, tr_features, tr_targets, 
                                       te_features, te_targets,
                                       PCA = False,
-                                      Logit = False,
-                                      SVC = False,
+                                      Logit = True,
+                                      SVC = True,
                                       NuSVC = True,
-                                      SGDC = False,
-                                      KNNC=  False,
-                                      RNNC = False,
-                                      GaussNB = False,
-                                      MultiNB = False, 
-                                      BernNB = False,
-                                      DTC = False,
-                                      RFC = False,
-                                      ETC = False,
-                                      GBC = False,
-                                      LDA = False,
-                                      QDA = False)
+                                      SGDC = True,
+                                      KNNC=  True,
+                                      RNNC = True,
+                                      GaussNB = True,
+                                      MultiNB = True, 
+                                      BernNB = True,
+                                      DTC = True,
+                                      RFC = True,
+                                      ETC = True,
+                                      GBC = True,
+                                      LDA = True,
+                                      QDA = True)
     
         class_nopca.fit_models(verbose)
         class_nopca.test_models()
@@ -87,7 +87,7 @@ if __name__ == '__main__':
     ###############################################################################
     
     # Drop the A-bomb
-    #a_bomb(train_features, train_targets, test_features, test_targets, True)
+    a_bomb(train_features, train_targets, test_features, test_targets, True)
     
     ###############################################################################
     
