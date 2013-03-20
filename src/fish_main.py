@@ -40,6 +40,7 @@ if __name__ == '__main__':
     def a_bomb(tr_features, tr_targets, te_features, te_targets, verbose):
         class_nopca = Classification(True, tr_features, tr_targets, 
                                       te_features, te_targets,
+                                      cv = 'loo',
                                       PCA = False,
                                       Logit = True,
                                       SVC = True,
@@ -47,8 +48,8 @@ if __name__ == '__main__':
                                       SGDC = True,
                                       KNNC=  True,
                                       RNNC = True,
-                                      GaussNB = True,
-                                      MultiNB = True, 
+                                      GaussNB = False,
+                                      MultiNB = False, 
                                       BernNB = True,
                                       DTC = True,
                                       RFC = True,
@@ -61,6 +62,7 @@ if __name__ == '__main__':
         class_nopca.test_models()
         class_nopca.write_data(verbose)
         class_nopca.print_results()
+        class_nopca.print_classification_reports()
     
     def workflow(pipe,params,inputs,targets):
         # find the best parameters for both the classifying and the
@@ -82,6 +84,18 @@ if __name__ == '__main__':
         best_parameters = grid_search.best_estimator_.get_params()
         for param_name in sorted(params.keys()):
             print "\t%s: %r" % (param_name, best_parameters[param_name])
+            
+#    def plot_conf_matrix(clf, test_features, test_targets):
+#        preds = clf.predict(test_features)
+#        labels = ['B', 'S', 'T', 'U']
+#        cnf = confusion_matrix(test_targets, preds, labels=[1,2,3,4])
+#        fig = plt.figure()
+#        ax = fig.add_subplot(111)
+#        cax = ax.matshow(cnf)
+#        fig.colorbar(cax)
+#        ax.set_xticklabels(['']+labels)
+#        ax.set_yticklabels(['']+labels)
+#        plt.show()
     
     
     ###############################################################################
@@ -103,25 +117,6 @@ if __name__ == '__main__':
 #    }
 #    
 #    workflow(pipeline, parameters, train_features, train_targets)
-#    
-#    clf = LogisticRegression(penalty='l1', C=1.0)
-#    clf.fit(train_features, train_targets)
-#    print clf.score(test_features, test_targets)
-#    
-#    preds = clf.predict(test_features)
-#    
-#    print(classification_report(test_targets, preds, labels = [1,2,3,4,5,6],target_names=['SB', 'SS', 'ST', 'T', 'TB', 'U']))
-#    
-#    labels = ['SB', 'SS', 'ST', 'T', 'TB', 'U']
-#    cnf = confusion_matrix(test_targets, preds, labels=[1,2,3,4,5,6])
-#    
-#    fig = plt.figure()
-#    ax = fig.add_subplot(111)
-#    cax = ax.matshow(cnf)
-#    fig.colorbar(cax)
-#    ax.set_xticklabels(['']+labels)
-#    ax.set_yticklabels(['']+labels)
-#    plt.show()
     
     ###############################################################################
     
@@ -139,25 +134,6 @@ if __name__ == '__main__':
 #    
 #    workflow(pipeline, parameters, train_features, train_targets)
 #    
-#    clf = KNeighborsClassifier(n_neighbors=3, weights='uniform', algorithm='ball_tree')
-#    clf.fit(train_features, train_targets)
-#    print clf.score(test_features, test_targets)
-#    
-#    preds = clf.predict(test_features)
-#    
-#    print(classification_report(test_targets, preds, labels = [1,2,3,4],target_names=['B', 'S', 'T', 'U']))
-#
-#    labels = ['B', 'S', 'T', 'U']
-#    cnf = confusion_matrix(test_targets, preds, labels=[1,2,3,4])
-#    
-#    fig = plt.figure()
-#    ax = fig.add_subplot(111)
-#    cax = ax.matshow(cnf)
-#    fig.colorbar(cax)
-#    ax.set_xticklabels(['']+labels)
-#    ax.set_yticklabels(['']+labels)
-#    plt.show()
-
     ###############################################################################
     
     # Exploring Random Forests
@@ -174,24 +150,6 @@ if __name__ == '__main__':
 #    
 #    workflow(pipeline, parameters, train_features, train_targets)
 #    
-#    clf = RandomForestClassifier(bootstrap=True, n_estimators=15, criterion='entropy', max_depth=5)
-#    clf.fit(train_features, train_targets)
-#    print clf.score(test_features, test_targets)
-#    
-#    preds = clf.predict(test_features)
-#    
-#    print(classification_report(test_targets, preds, labels = [1,2,3,4],target_names=['B', 'S', 'T', 'U']))
-#    
-#    labels = ['B', 'S', 'T', 'U']
-#    cnf = confusion_matrix(test_targets, preds, labels=[1,2,3,4])
-#    
-#    fig = plt.figure()
-#    ax = fig.add_subplot(111)
-#    cax = ax.matshow(cnf)
-#    fig.colorbar(cax)
-#    ax.set_xticklabels(['']+labels)
-#    ax.set_yticklabels(['']+labels)
-#    plt.show()
     ###############################################################################
     
     # Exploring Gradient Boosting
@@ -207,25 +165,6 @@ if __name__ == '__main__':
 #    }
 #    
 #    workflow(pipeline, parameters, train_features, train_targets)
-#
-#    clf = GradientBoostingClassifier(max_depth=5, n_estimators=200, learn_rate=0.4)
-#    clf.fit(train_features, train_targets)
-#    print clf.score(test_features, test_targets)
-#    
-#    preds = clf.predict(test_features)
-#    
-#    print(classification_report(test_targets, preds, labels = [1,2,3,4],target_names=['B', 'S', 'T', 'U']))
-#    
-#    labels = ['B', 'S', 'T', 'U']
-#    cnf = confusion_matrix(test_targets, preds, labels=[1,2,3,4])
-#    
-#    fig = plt.figure()
-#    ax = fig.add_subplot(111)
-#    cax = ax.matshow(cnf)
-#    fig.colorbar(cax)
-#    ax.set_xticklabels(['']+labels)
-#    ax.set_yticklabels(['']+labels)
-#    plt.show()
 
     ###############################################################################
     
@@ -243,25 +182,6 @@ if __name__ == '__main__':
 #    }
     
     #workflow(pipeline, parameters, train_features, train_targets)
-    
-#    clf = NuSVC(kernel='rbf',nu=0.15)
-#    clf.fit(test_features, test_targets)
-#    print clf.score(test_features, test_targets)
-#    
-#    preds = clf.predict(test_features)
-#    
-#    print(classification_report(test_targets, preds, labels = [1,2,3,4],target_names=['B', 'S', 'T', 'U']))
-#    
-#    labels = ['B', 'S', 'T', 'U']
-#    cnf = confusion_matrix(test_targets, preds, labels=[1,2,3,4])
-#    
-#    fig = plt.figure()
-#    ax = fig.add_subplot(111)
-#    cax = ax.matshow(cnf)
-#    fig.colorbar(cax)
-#    ax.set_xticklabels(['']+labels)
-#    ax.set_yticklabels(['']+labels)
-#    plt.show()
     
     ###############################################################################
     
@@ -341,11 +261,11 @@ if __name__ == '__main__':
         
 #    clustering(full_data[:,:-1], full_data[:,-1],False)
     
-    est = KMeans(init='k-means++', k=len(np.unique(full_data[:,-1])), n_init=10)
-    est.fit(full_data[:,:-1])
-    centers = est.cluster_centers_
-    ori_centers = scaler.inverse_transform(centers)
-    np.savetxt('cluster_centers.csv', ori_centers, delimiter=',', newline='\n')
+#    est = KMeans(init='k-means++', k=len(np.unique(full_data[:,-1])), n_init=10)
+#    est.fit(full_data[:,:-1])
+#    centers = est.cluster_centers_
+#    ori_centers = scaler.inverse_transform(centers)
+#    np.savetxt('cluster_centers.csv', ori_centers, delimiter=',', newline='\n')
     
 #    svc = SVC(kernel="linear", C=1)
 #    rfe = RFE(estimator=svc, n_features_to_select=3, step=1)
@@ -360,7 +280,7 @@ if __name__ == '__main__':
 #    sec_indx = 9
 #    third_indx = 16
 #    
-    labels = est.labels_
+#    labels = est.labels_
 
 #    print labels.shape
 #    print full_data[:,:-1].shape

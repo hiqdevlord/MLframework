@@ -6,6 +6,7 @@ Created on Feb 20, 2013
 TODO:
 - write data files for performances and paramterisations
 - add preprocessing functionality
+- catch the errors when we can't fit a classifier
 '''
 
 import numpy as np
@@ -24,6 +25,7 @@ from sklearn.lda import LDA
 from sklearn.qda import QDA
 #from sklearn.ensemble.weight_boosting import AdaBoostClassifier
 from sklearn import cross_validation
+from sklearn.metrics import classification_report, confusion_matrix
 
 class Classification(object):
     '''
@@ -89,23 +91,25 @@ class Classification(object):
     def __gen_logit_estimator(self,verbose):
         logistic = LogisticRegression()
         if self.PCA:
-            description = "logit classifier with PCA"
+            description = "logitClassifier with PCA"
             if verbose: print "generating logit classifier grid search with PCA..."
             pca = decomposition.PCA()
             pipe = Pipeline(steps=[('pca', pca), ('logistic', logistic)])
             n_components = [20, 40, 64]
-            Cs = np.logspace(-4, 4, 3)
+            Cs = np.logspace(-4, 4, 7)
+            penalty =  ['l1', 'l2']
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
-                                     logistic__C=Cs), n_jobs=-1, 
+                                     logistic__penalty=penalty, logistic__C=Cs), n_jobs=-1, 
                                      verbose=1, cv=self.cv)
         else: 
-            description = "logit classifier"
+            description = "logitClassifier"
             if verbose: print "generating logit classifier grid search..."
             pipe = Pipeline(steps=[('logistic', logistic)])
-            Cs = np.logspace(-4, 4, 3)
+            Cs = np.logspace(-4, 4, 7)
+            penalty =  ['l1', 'l2']
             estimator = GridSearchCV(pipe,
-                                     dict(logistic__C=Cs), n_jobs=-1, 
+                                     dict(logistic__penalty=penalty, logistic__C=Cs), n_jobs=-1, 
                                      verbose=1, cv=self.cv)
         return [estimator, description]
     
@@ -119,7 +123,7 @@ class Classification(object):
             n_components = [20, 40, 64]
             
             kernels = ['linear', 'poly', 'rbf', 'sigmoid']
-            Cs = np.logspace(-4, 4, 3)
+            Cs = np.logspace(-4, 4, 7)
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
                                      svc__C=Cs,svc__kernel=kernels), n_jobs=-1, 
@@ -129,7 +133,7 @@ class Classification(object):
             if verbose: print "generating support vector classifier grid search..."
             pipe = Pipeline(steps=[('svc', svc)])            
             kernels = ['linear', 'poly', 'rbf', 'sigmoid']
-            Cs = np.logspace(-4, 4, 3)
+            Cs = np.logspace(-4, 4, 7)
             estimator = GridSearchCV(pipe,
                                      dict(svc__C=Cs, svc__kernel=kernels), n_jobs=-1, 
                                      verbose=1, cv=self.cv)
@@ -144,7 +148,7 @@ class Classification(object):
             pipe = Pipeline(steps=[('pca', pca), ('nusvc', nusvc)])
             n_components = [20, 40, 64]
             kernels = ['linear', 'poly', 'rbf', 'sigmoid']
-            nu = [0.1]
+            nu = [0.05,0.1,0.15]
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
                                      nusvc__nu=nu,nusvc__kernel=kernels), n_jobs=-1, 
@@ -154,7 +158,7 @@ class Classification(object):
             if verbose: print "generating nu support vector classifier grid search..."
             pipe = Pipeline(steps=[('nusvc', nusvc)])            
             kernels = ['linear', 'poly', 'rbf', 'sigmoid']
-            nu = [0.5]
+            nu = [0.05,0.1,0.15]
             estimator = GridSearchCV(pipe, dict(nusvc__nu=nu, nusvc__kernel=kernels), n_jobs=-1, 
                                      verbose=1, cv=self.cv)
         return [estimator, description]
@@ -192,7 +196,7 @@ class Classification(object):
             pca = decomposition.PCA()
             pipe = Pipeline(steps=[('pca', pca), ('knn', knn)])
             n_components = [20, 40, 64]
-            n_neighbors = [3]#,5,9]
+            n_neighbors = [3]#5,9]
             algorithm = ['ball_tree', 'kd_tree', 'brute']
             estimator = GridSearchCV(pipe,
                                      dict(pca__n_components=n_components,
@@ -504,6 +508,9 @@ class Classification(object):
         param_file.close()
         
     def print_results(self):
+        print "\n###########################################"
+        print "########### CV AND TEST RESULTS ###########"
+        print "###########################################"
         temp_data = self.outdata
         temp_data.insert(0, ["Algorithm", "Validation Score", "Test Score\n"])
         s = [[str(e) for e in row] for row in self.outdata]
@@ -511,9 +518,26 @@ class Classification(object):
         fmt = '\t'.join('{{:{}}}'.format(x) for x in lens)
         table = [fmt.format(*row) for row in s]
         print '\n'
-        print '\n'.join(table)   
-            
-            
+        print '\n'.join(table)
+        
+    def print_classification_reports(self, conf=True):
+        print "\n###########################################"
+        print "######### CLASSIFICATION REPORTS ##########"
+        print "###########################################"
+        for e in self.estimators:
+            try:
+                preds = e[0].predict(self.inputs_test)
+                print e[1] + " classificiation report..."
+                print(classification_report(self.targets_test, preds, labels = [1,2,3,4],target_names=['B', 'S', 'T', 'U']))
+                cnf = confusion_matrix(self.targets_test, preds, labels=[1,2,3,4])
+                np.savetxt("{}_conf_matrix.csv".format(e[1]), cnf, delimiter=',')
+            except:
+                print "\n"
+    
+        
+        
+    
+    
             
             
             
